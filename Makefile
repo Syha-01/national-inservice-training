@@ -1,4 +1,4 @@
 .PHONY: run/api
 run/api:
 	@echo '--Running aaplication'
-	@go run ./cmd/api -port=3000 -env=production
+	@go run ./cmd/api -port=4000 -env=production

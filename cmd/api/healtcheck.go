@@ -5,13 +5,9 @@ import (
 	"net/http"
 )
 
-func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
-
-	js := `{"status": "available", "environment": %q, "version": %q}`
-	js = fmt.Sprintf(js, app.config.env, version)
-	// Content-Type is text/plain by default
+func (a *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
+	jsResponse := `{"status": "available", "environment": %q, "version": %q}`
+	jsResponse = fmt.Sprintf(jsResponse, a.config.env, version)
 	w.Header().Set("Content-Type", "application/json")
-	// Write the JSON as the HTTP response body.
-	w.Write([]byte(js))
-
+	w.Write([]byte(jsResponse))
 }
