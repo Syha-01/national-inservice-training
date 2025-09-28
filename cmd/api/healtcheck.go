@@ -5,10 +5,12 @@ import (
 )
 
 func (a *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
-	data := map[string]string{
-		"status":      "available",
-		"environment": a.config.env,
-		"version":     version,
+	data := envelope{
+		"status": "available",
+		"system_info": map[string]string{
+			"environment": a.config.env,
+			"version":     version,
+		},
 	}
 	err := a.writeJSON(w, http.StatusOK, data, nil)
 	if err != nil {
