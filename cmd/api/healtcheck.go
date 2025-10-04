@@ -4,8 +4,9 @@ import (
 	"net/http"
 )
 
+// healthcheckHandler returns the status of the API
 func (a *application) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
-	panic("Apples & Oranges") // deliberate panic
+	// Create a map to hold the response data
 	data := envelope{
 		"status": "available",
 		"system_info": map[string]string{
@@ -13,6 +14,8 @@ func (a *application) healthcheckHandler(w http.ResponseWriter, r *http.Request)
 			"version":     version,
 		},
 	}
+
+	// Write the JSON response
 	err := a.writeJSON(w, http.StatusOK, data, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
