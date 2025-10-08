@@ -1,90 +1,215 @@
-CREATE TABLE "users" (
-  "id" bigserial PRIMARY KEY,
-  "created_at" "timestamp(0) with time zone" NOT NULL DEFAULT (now()),
-  "officer_reg_number" text UNIQUE,
-  "email" citext UNIQUE NOT NULL,
-  "password_hash" bytea NOT NULL,
-  "activated" bool NOT NULL DEFAULT false,
-  "role" text NOT NULL,
-  "version" integer NOT NULL DEFAULT 1
+-- ========= LOOKUP TABLES =========
+-- These tables store lists of options to ensure data consistency.
+
+CREATE TABLE regions (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE
 );
 
-CREATE TABLE "officers" (
-  "regulation_number" text PRIMARY KEY,
-  "created_at" "timestamp(0) with time zone" NOT NULL DEFAULT (now()),
-  "updated_at" "timestamp(0) with time zone" NOT NULL DEFAULT (now()),
-  "first_name" text NOT NULL,
-  "last_name" text NOT NULL,
-  "sex" text NOT NULL,
-  "rank_id" bigint NOT NULL,
-  "formation_id" bigint NOT NULL,
-  "posting_id" bigint NOT NULL,
-  "is_active" bool NOT NULL DEFAULT true,
-  "version" integer NOT NULL DEFAULT 1
+CREATE TABLE formations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    region_id INT NOT NULL,
+    FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE RESTRICT
 );
 
-CREATE TABLE "attendance" (
-  "id" bigserial PRIMARY KEY,
-  "session_id" bigint NOT NULL,
-  "officer_reg_number" text NOT NULL
+CREATE TABLE postings (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
 );
 
-CREATE TABLE "training_sessions" (
-  "id" bigserial PRIMARY KEY,
-  "course_id" bigint NOT NULL,
-  "start_date" date NOT NULL,
-  "end_date" date NOT NULL,
-  "facilitator_details" text
+CREATE TABLE ranks (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    abbreviation VARCHAR(20) UNIQUE
 );
 
-CREATE TABLE "training_courses" (
-  "id" bigserial PRIMARY KEY,
-  "name" text UNIQUE NOT NULL,
-  "category" text NOT NULL,
-  "default_credit_hours" integer NOT NULL
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE -- e.g., 'Administrator', 'Content Contributor', 'System User'
 );
 
-CREATE TABLE "ranks" (
-  "id" bigserial PRIMARY KEY,
-  "name" text UNIQUE NOT NULL
+
+-- ========= CORE DATA TABLES =========
+
+CREATE TABLE personnel (
+    id SERIAL PRIMARY KEY,
+    regulation_number VARCHAR(50) NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    sex VARCHAR(10) NOT NULL CHECK (sex IN ('Male', 'Female')),
+    rank_id INT,
+    formation_id INT,
+    posting_id INT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (rank_id) REFERENCES ranks(id) ON DELETE SET NULL,
+    FOREIGN KEY (formation_id) REFERENCES formations(id) ON DELETE SET NULL,
+    FOREIGN KEY (posting_id) REFERENCES postings(id) ON DELETE SET NULL
 );
 
-CREATE TABLE "postings" (
-  "id" bigserial PRIMARY KEY,
-  "name" text UNIQUE NOT NULL
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(20) NOT NULL CHECK (category IN ('Mandatory', 'Elective')),
+    credit_hours DECIMAL(5, 2) NOT NULL CHECK (credit_hours > 0),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE "formations" (
-  "id" bigserial PRIMARY KEY,
-  "name" text UNIQUE NOT NULL,
-  "region_id" bigint NOT NULL
+CREATE TABLE training_sessions (
+    id SERIAL PRIMARY KEY,
+    course_id INT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    location VARCHAR(255),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
-CREATE TABLE "regions" (
-  "id" bigserial PRIMARY KEY,
-  "name" text UNIQUE NOT NULL
+CREATE TABLE facilitators (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    personnel_id INT UNIQUE,
+    FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE SET NULL
 );
 
-CREATE UNIQUE INDEX ON "attendance" ("session_id", "officer_reg_number");
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role_id INT NOT NULL,
+    personnel_id INT UNIQUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT,
+    FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE SET NULL
+);
 
-COMMENT ON COLUMN "users"."role" IS 'Must be ''Administrator'', ''Content Contributor'', or ''System User''';
 
-COMMENT ON COLUMN "officers"."sex" IS 'Must be ''Male'' or ''Female''';
+-- ========= JUNCTION TABLES (Many-to-Many Relationships) =========
 
-COMMENT ON COLUMN "training_courses"."category" IS 'Must be ''Mandatory'' or ''Elective''';
+CREATE TABLE session_enrollment (
+    id SERIAL PRIMARY KEY,
+    personnel_id INT NOT NULL,
+    session_id INT NOT NULL,
+    completion_date DATE,
+    status VARCHAR(50) DEFAULT 'Enrolled' CHECK (status IN ('Enrolled', 'Completed', 'Failed', 'Withdrew')),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE CASCADE,
+    FOREIGN KEY (session_id) REFERENCES training_sessions(id) ON DELETE CASCADE,
+    UNIQUE(personnel_id, session_id)
+);
 
-ALTER TABLE "users" ADD FOREIGN KEY ("officer_reg_number") REFERENCES "officers" ("regulation_number");
+CREATE TABLE session_facilitators (
+    session_id INT NOT NULL,
+    facilitator_id INT NOT NULL,
+    PRIMARY KEY (session_id, facilitator_id),
+    FOREIGN KEY (session_id) REFERENCES training_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (facilitator_id) REFERENCES facilitators(id) ON DELETE CASCADE
+);
 
-ALTER TABLE "officers" ADD FOREIGN KEY ("rank_id") REFERENCES "ranks" ("id");
 
-ALTER TABLE "officers" ADD FOREIGN KEY ("formation_id") REFERENCES "formations" ("id");
+-- ========= RATING TABLES =========
 
-ALTER TABLE "officers" ADD FOREIGN KEY ("posting_id") REFERENCES "postings" ("id");
+CREATE TABLE course_ratings (
+    id SERIAL PRIMARY KEY,
+    session_enrollment_id INT NOT NULL UNIQUE, -- Unique ensures one rating per enrollment
+    score INT NOT NULL CHECK (score >= 1 AND score <= 5),
+    comment TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (session_enrollment_id) REFERENCES session_enrollment(id) ON DELETE CASCADE
+);
 
-ALTER TABLE "attendance" ADD FOREIGN KEY ("session_id") REFERENCES "training_sessions" ("id");
+CREATE TABLE facilitator_ratings (
+    id SERIAL PRIMARY KEY,
+    session_enrollment_id INT NOT NULL,
+    facilitator_id INT NOT NULL,
+    score INT NOT NULL CHECK (score >= 1 AND score <= 5),
+    comment TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    FOREIGN KEY (session_enrollment_id) REFERENCES session_enrollment(id) ON DELETE CASCADE,
+    FOREIGN KEY (facilitator_id) REFERENCES facilitators(id) ON DELETE CASCADE,
+    UNIQUE (session_enrollment_id, facilitator_id)
+);
 
-ALTER TABLE "attendance" ADD FOREIGN KEY ("officer_reg_number") REFERENCES "officers" ("regulation_number");
+-- ========= DATA INSERTION FOR LOOKUP TABLES =========
+-- This section populates the lookup tables with the complete data from your documents.
 
-ALTER TABLE "training_sessions" ADD FOREIGN KEY ("course_id") REFERENCES "training_courses" ("id");
+INSERT INTO regions (name) VALUES
+('Northern Region'),
+('Western Region'),
+('Eastern Division'),
+('Southern Region');
 
-ALTER TABLE "formations" ADD FOREIGN KEY ("region_id") REFERENCES "regions" ("id");
+INSERT INTO roles (name) VALUES
+('Administrator'),
+('Content Contributor'),
+('System User');
+
+INSERT INTO ranks (name, abbreviation) VALUES
+('Special Constable', 'SC'),
+('Constable', 'PC'),
+('Corporal', 'CPL'),
+('Sergeant', 'SGT'),
+('Inspector of Police', 'INSP'),
+('Assistant Superintendent of Police', 'ASP'),
+('Superintendent of Police', 'SUPT'),
+('Senior Superintendent of Police', 'Sr. SUPT'),
+('Assistant Commissioner of Police', 'ACP'),
+('Deputy Commissioner of Police', 'DCP'),
+('Commissioner of Police', 'COMPOL'),
+('Not Applicable', 'N/A');
+
+INSERT INTO postings (name) VALUES
+('Relief'),
+('Staff Duties'),
+('Station Manager'),
+('Crimes Investigations Branch [CIB]'),
+('Special Branch [SB]'),
+('Quick Response Team [QRT]'),
+('Prosecution Branch'),
+('Gang Intelligence, Interdiction & Investigation [GI³]'),
+('Anti-Narcotics Unit [ANU]'),
+('Special Patrol Unit [SPU]'),
+('Tourism Police Unit [TPU]'),
+('Major Crimes Unit [MCU]'),
+('Mobile Interdiction Unit [MIU]'),
+('K-9 Unit'),
+('Professional Standards Branch [PSB]'),
+('Deputy Officer Commanding/Deputy Commander'),
+('Officer Commanding/Commander'),
+('Regional Commander'),
+('Special Assignment'),
+('Other');
+
+-- Use subqueries to ensure the correct region_id is used for each formation.
+INSERT INTO formations (name, region_id) VALUES
+('Corozal Police Formation', (SELECT id FROM regions WHERE name = 'Northern Region')),
+('Orange Walk Police Formation', (SELECT id FROM regions WHERE name = 'Northern Region')),
+('Police Headquarters - Belmopan', (SELECT id FROM regions WHERE name = 'Western Region')),
+('San Ignacio Police Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
+('Benque Viejo Police Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
+('Belmopan Police Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
+('Roaring Creek Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
+('Police Headquarters - Eastern Division', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Precinct 1', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Precinct 2', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Precinct 3', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Precinct 4', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Ladyville Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Hattieville Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Caye Caulker Police Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('San Pedro Police Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Punta Gorda Police Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
+('Intermediate Southern Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
+('Placencia Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
+('Seine Bight Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
+('Hopkins Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
+('Dangriga Police Formation', (SELECT id FROM regions WHERE name = 'Southern Region'));
