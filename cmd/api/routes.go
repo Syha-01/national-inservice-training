@@ -14,17 +14,18 @@ func (app *application) routes() http.Handler {
 
 	// setup routes
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
-	
+	router.HandlerFunc(http.MethodPost, "/v1/nits", app.createNitHandler)
+
 	// TODO: Add more routes as you build your API
 	// router.HandlerFunc(http.MethodGet, "/v1/officers", app.listOfficersHandler)
 	// router.HandlerFunc(http.MethodPost, "/v1/officers", app.createOfficerHandler)
 	// router.HandlerFunc(http.MethodGet, "/v1/officers/:id", app.showOfficerHandler)
 	// router.HandlerFunc(http.MethodPatch, "/v1/officers/:id", app.updateOfficerHandler)
 	// router.HandlerFunc(http.MethodDelete, "/v1/officers/:id", app.deleteOfficerHandler)
-	
+
 	// router.HandlerFunc(http.MethodGet, "/v1/trainings", app.listTrainingsHandler)
 	// router.HandlerFunc(http.MethodPost, "/v1/trainings", app.createTrainingHandler)
-	
+
 	// Middleware chain (order matters!):
 	// 1. recoverPanic - catches any panics and returns 500
 	// 2. enableCORS - adds CORS headers and handles preflight
