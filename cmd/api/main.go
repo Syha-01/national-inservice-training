@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -8,13 +10,18 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
-const version = "1.0.0"
+const appVersion = "1.0.0"
 
 type configuration struct {
 	port int
 	env  string
+	db   struct {
+		dsn string
+	}
 	cors struct {
 		trustedOrigins []string
 	}
@@ -30,17 +37,28 @@ func main() {
 
 	flag.IntVar(&settings.port, "port", 4000, "Server port")
 	flag.StringVar(&settings.env, "env", "development",
-		"Environment (development|staging|production)")
-	
+		"Environment(development|staging|production)")
+	// read in the dsn
+	flag.StringVar(&settings.db.dsn, "db-dsn", "postgres://nits:bananaforscale@localhost/nits?sslmode=disable", "PostgreSQL DSN")
+
 	// CORS configuration
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
 		settings.cors.trustedOrigins = strings.Fields(val)
 		return nil
 	})
-	
+
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	// the call to openDB() sets up our connection pool
+	db, err := openDB(settings)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+	// release the database resources before exiting
+	defer db.Close()
+	logger.Info("database connection pool established")
 
 	appInstance := &application{
 		config: settings,
@@ -57,15 +75,31 @@ func main() {
 		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
 
-	logger.Info("starting server",
-		"address", apiServer.Addr,
-		"environment", settings.env,
-		"cors", settings.cors.trustedOrigins,
-	)
+	logger.Info("starting server", "address", apiServer.Addr,
+		"environment", settings.env)
+	err = apiServer.ListenAndServe() // remove the :
+	logger.Error(err.Error())
+	os.Exit(1)
+} // end of main()
 
-	err := apiServer.ListenAndServe()
+func openDB(settings configuration) (*sql.DB, error) {
+	// open a connection pool
+	db, err := sql.Open("postgres", settings.db.dsn)
 	if err != nil {
-		logger.Error(err.Error())
-		os.Exit(1)
+		return nil, err
 	}
+
+	// set a context to ensure DB operations don't take too long
+	ctx, cancel := context.WithTimeout(context.Background(),
+		5*time.Second)
+	defer cancel()
+	// let's test if the connection pool was created
+	// we trying pinging it with a 5-second timeout
+	err = db.PingContext(ctx)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+	// return the connection pool (sql.DB)
+	return db, nil
 }
