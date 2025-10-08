@@ -53,3 +53,7 @@ func (a *application) methodNotAllowedResponse(w http.ResponseWriter, r *http.Re
 
 	a.errorResponseJSON(w, r, http.StatusMethodNotAllowed, message)
 }
+
+func (a *application) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
+	a.errorResponseJSON(w, r, http.StatusBadRequest, err.Error())
+}

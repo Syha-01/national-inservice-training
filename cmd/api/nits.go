@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -17,9 +16,9 @@ func (a *application) createNitHandler(w http.ResponseWriter, r *http.Request) {
 		Location  string    `json:"location"`
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&input)
+	err := a.readJSON(w, r, &input)
 	if err != nil {
-		a.errorResponseJSON(w, r, http.StatusBadRequest, err.Error())
+		a.badRequestResponse(w, r, err)
 		return
 	}
 
