@@ -1,0 +1,1 @@
+export TRAINING_DB_DSN=postgres://[DATABASE]:[PASSWORD]@localhost/[USER/ROLE]?sslmode=disable

@@ -38,8 +38,10 @@ func main() {
 	flag.IntVar(&settings.port, "port", 4000, "Server port")
 	flag.StringVar(&settings.env, "env", "development",
 		"Environment(development|staging|production)")
-	// read in the dsn
-	flag.StringVar(&settings.db.dsn, "db-dsn", "postgres://nits:bananaforscale@localhost/nits?sslmode=disable", "PostgreSQL DSN")
+	// read in the dsn from the environment
+	dsn := os.Getenv("TRAINING_DB_DSN")
+
+	flag.StringVar(&settings.db.dsn, "db-dsn", dsn, "PostgreSQL DSN")
 
 	// CORS configuration
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {

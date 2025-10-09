@@ -1,7 +1,7 @@
 
 //------------------------------------ MIGRATIONS ------------------------------------//
 
-migrate -path=./migrations -database="postgres://nits:bananaforscale@localhost/nits?sslmode=disable" up
+migrate -path=./migrations -database="$TRAINING_DB_DSN" up
 
 //------------------------------------ LOGIN DB CLI ------------------------------------//
 
