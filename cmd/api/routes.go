@@ -26,7 +26,7 @@ func (app *application) routes() http.Handler {
 	// router.HandlerFunc(http.MethodGet, "/v1/trainings", app.listTrainingsHandler)
 	// router.HandlerFunc(http.MethodPost, "/v1/trainings", app.createTrainingHandler)
 
-	// Middleware chain (order matters!):
+	//Middleware chain
 	// 1. recoverPanic - catches any panics and returns 500
 	// 2. enableCORS - adds CORS headers and handles preflight
 	// 3. rateLimit - limits request rate (add when implemented)
