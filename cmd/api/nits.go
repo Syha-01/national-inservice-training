@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Syha-01/national-inservice-training/internal/data"
+	"github.com/Syha-01/national-inservice-training/internal/validator"
 )
 
 func (a *application) createNitHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,8 +28,15 @@ func (a *application) createNitHandler(w http.ResponseWriter, r *http.Request) {
 		StartDate: input.StartDate,
 		EndDate:   input.EndDate,
 		Location:  input.Location,
-		CreatedAt: time.Now(),
-		Version:   1,
+	}
+
+	v := validator.New()
+
+	data.ValidateNit(v, nit)
+
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
 	}
 
 	fmt.Fprintf(w, "%+v\n", nit)
