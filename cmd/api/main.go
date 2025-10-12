@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Syha-01/national-inservice-training/internal/data"
 	_ "github.com/lib/pq"
 )
 
@@ -30,6 +31,7 @@ type configuration struct {
 type application struct {
 	config configuration
 	logger *slog.Logger
+	models data.Models
 }
 
 func main() {
@@ -65,6 +67,7 @@ func main() {
 	appInstance := &application{
 		config: settings,
 		logger: logger,
+		models: data.NewModels(db),
 	}
 
 	// Create server with proper configuration
