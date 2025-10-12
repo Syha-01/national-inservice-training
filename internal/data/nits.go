@@ -44,6 +44,16 @@ func ValidateNit(v *validator.Validator, nit *Nit) {
 	v.Check(len(nit.Location) <= 100, "location", "must not be more than 100 bytes long")
 }
 
+func ValidateOfficer(v *validator.Validator, officer *Officer) {
+	v.Check(officer.RegulationNumber != "", "regulation_number", "must be provided")
+	v.Check(len(officer.RegulationNumber) <= 50, "regulation_number", "must not be more than 50 bytes long")
+	v.Check(officer.FirstName != "", "first_name", "must be provided")
+	v.Check(len(officer.FirstName) <= 100, "first_name", "must not be more than 100 bytes long")
+	v.Check(officer.LastName != "", "last_name", "must be provided")
+	v.Check(len(officer.LastName) <= 100, "last_name", "must not be more than 100 bytes long")
+	v.Check(officer.Sex == "Male" || officer.Sex == "Female", "sex", "must be either Male or Female")
+}
+
 // OfficerModel wraps the database connection pool.
 type OfficerModel struct {
 	DB *sql.DB
@@ -89,4 +99,29 @@ func (m OfficerModel) Get(id int64) (*Officer, error) {
 		}
 	}
 	return &officer, nil
+}
+
+// Update a specific Officer in the personnel table
+func (m OfficerModel) Update(officer *Officer) error {
+	query := `
+		UPDATE personnel
+		SET regulation_number = $1, first_name = $2, last_name = $3, sex = $4, rank_id = $5, formation_id = $6, posting_id = $7, is_active = $8, updated_at = NOW()
+		WHERE id = $9
+`
+	args := []any{
+		officer.RegulationNumber,
+		officer.FirstName,
+		officer.LastName,
+		officer.Sex,
+		officer.RankID,
+		officer.FormationID,
+		officer.PostingID,
+		officer.IsActive,
+		officer.ID,
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := m.DB.ExecContext(ctx, query, args...)
+	return err
 }
