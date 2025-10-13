@@ -45,6 +45,57 @@ func (a *application) createNitHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%+v\n", nit)
 }
 
+func (a *application) createOfficerHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		RegulationNumber string `json:"regulation_number"`
+		FirstName        string `json:"first_name"`
+		LastName         string `json:"last_name"`
+		Sex              string `json:"sex"`
+		RankID           int64  `json:"rank_id"`
+		FormationID      int64  `json:"formation_id"`
+		PostingID        int64  `json:"posting_id"`
+		IsActive         bool   `json:"is_active"`
+	}
+
+	err := a.readJSON(w, r, &input)
+	if err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	officer := &data.Officer{
+		RegulationNumber: input.RegulationNumber,
+		FirstName:        input.FirstName,
+		LastName:         input.LastName,
+		Sex:              input.Sex,
+		RankID:           input.RankID,
+		FormationID:      input.FormationID,
+		PostingID:        input.PostingID,
+		IsActive:         input.IsActive,
+	}
+
+	v := validator.New()
+
+	if data.ValidateOfficer(v, officer); !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = a.models.Officers.CreateOfficer(officer)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/officers/%d", officer.ID))
+
+	err = a.writeJSON(w, http.StatusCreated, envelope{"officer": officer}, headers)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
+
 func (a *application) displayOfficerHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := a.readIDParam(r)
 	if err != nil {

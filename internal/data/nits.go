@@ -239,6 +239,30 @@ func (m OfficerModel) DeleteOfficer(id int64) error {
 	return nil
 }
 
+// CreateOfficer creates a new officer in the database.
+func (m OfficerModel) CreateOfficer(officer *Officer) error {
+	query := `
+		INSERT INTO personnel (regulation_number, first_name, last_name, sex, rank_id, formation_id, posting_id, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id, created_at, updated_at
+`
+	args := []any{
+		officer.RegulationNumber,
+		officer.FirstName,
+		officer.LastName,
+		officer.Sex,
+		officer.RankID,
+		officer.FormationID,
+		officer.PostingID,
+		officer.IsActive,
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&officer.ID, &officer.CreatedAt, &officer.UpdatedAt)
+}
+
+
 // GetAllCourses retrieves all courses from the database.
 func (m CourseModel) GetAllCourses() ([]*Course, error) {
 	query := `
