@@ -35,6 +35,19 @@ type Officer struct {
 	UpdatedAt        time.Time `json:"-"`
 }
 
+// Course defines the structure for a training course.
+type Course struct {
+	ID          int64     `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Category    string    `json:"category"` // 'Mandatory' or 'Elective'
+	CreditHours float64   `json:"credit_hours"`
+	CreatedAt   time.Time `json:"-"`
+	UpdatedAt   time.Time `json:"-"`
+	Version     int32     `json:"version"`
+}
+
+
 func ValidateNit(v *validator.Validator, nit *Nit) {
 	v.Check(nit.CourseID > 0, "course_id", "must be provided and be a positive integer")
 	v.Check(!nit.StartDate.IsZero(), "start_date", "must be provided")
@@ -54,8 +67,23 @@ func ValidateOfficer(v *validator.Validator, officer *Officer) {
 	v.Check(officer.Sex == "Male" || officer.Sex == "Female", "sex", "must be either Male or Female")
 }
 
+// ValidateCourse validates a Course struct
+func ValidateCourse(v *validator.Validator, course *Course) {
+	v.Check(course.Title != "", "title", "must be provided")
+	v.Check(len(course.Title) <= 255, "title", "must not be more than 255 bytes long")
+	v.Check(course.Category != "", "category", "must be provided")
+	v.Check(course.Category == "Mandatory" || course.Category == "Elective", "category", "must be either 'Mandatory' or 'Elective'")
+	v.Check(course.CreditHours > 0, "credit_hours", "must be greater than 0")
+	v.Check(len(course.Description) <= 1000, "description", "must not be more than 1000 bytes long")
+}
+
 // OfficerModel wraps the database connection pool.
 type OfficerModel struct {
+	DB *sql.DB
+}
+
+// CourseModel wraps the database connection pool.
+type CourseModel struct {
 	DB *sql.DB
 }
 
@@ -125,3 +153,178 @@ func (m OfficerModel) Update(officer *Officer) error {
 	_, err := m.DB.ExecContext(ctx, query, args...)
 	return err
 }
+
+// GetAll retrieves all courses from the database
+func (m CourseModel) GetAll() ([]*Course, error) {
+	query := `
+		SELECT id, title, description, category, credit_hours, created_at, updated_at
+		FROM courses
+		ORDER BY id
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	courses := []*Course{}
+
+	for rows.Next() {
+		var course Course
+		err := rows.Scan(
+			&course.ID,
+			&course.Title,
+			&course.Description,
+			&course.Category,
+			&course.CreditHours,
+			&course.CreatedAt,
+			&course.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		courses = append(courses, &course)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return courses, nil
+}
+
+// Get retrieves a specific course by ID
+func (m CourseModel) Get(id int64) (*Course, error) {
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+
+	query := `
+		SELECT id, title, description, category, credit_hours, created_at, updated_at
+		FROM courses
+		WHERE id = $1
+	`
+
+	var course Course
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&course.ID,
+		&course.Title,
+		&course.Description,
+		&course.Category,
+		&course.CreditHours,
+		&course.CreatedAt,
+		&course.UpdatedAt,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &course, nil
+}
+
+// Create inserts a new course into the database
+func (m CourseModel) Create(course *Course) error {
+	query := `
+		INSERT INTO courses (title, description, category, credit_hours, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, NOW(), NOW())
+		RETURNING id, created_at, updated_at
+	`
+
+	args := []any{
+		course.Title,
+		course.Description,
+		course.Category,
+		course.CreditHours,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
+		&course.ID,
+		&course.CreatedAt,
+		&course.UpdatedAt,
+	)
+
+	return err
+}
+
+// Update modifies an existing course in the database
+func (m CourseModel) Update(course *Course) error {
+	query := `
+		UPDATE courses
+		SET title = $1, description = $2, category = $3, credit_hours = $4, updated_at = NOW()
+		WHERE id = $5
+		RETURNING updated_at
+	`
+
+	args := []any{
+		course.Title,
+		course.Description,
+		course.Category,
+		course.CreditHours,
+		course.ID,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&course.UpdatedAt)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrRecordNotFound
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Delete removes a course from the database
+func (m CourseModel) Delete(id int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+
+	query := `
+		DELETE FROM courses
+		WHERE id = $1
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+

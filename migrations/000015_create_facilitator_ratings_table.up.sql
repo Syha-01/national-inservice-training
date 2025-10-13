@@ -9,3 +9,4 @@ CREATE TABLE facilitator_ratings (
     FOREIGN KEY (facilitator_id) REFERENCES facilitators(id) ON DELETE CASCADE,
     UNIQUE (session_enrollment_id, facilitator_id)
 );
+
