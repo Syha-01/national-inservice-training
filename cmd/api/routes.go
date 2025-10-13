@@ -17,14 +17,14 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/nits", app.createNitHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/officers/:id", app.displayOfficerHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/officers/:id", app.updateOfficerHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/officers/:id", app.deleteOfficerHandler)
 
-		// COURSES ROUTES
+	// COURSES ROUTES
 	router.HandlerFunc(http.MethodGet, "/v1/courses", app.listCoursesHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/courses", app.createCourseHandler)
 	router.Handle(http.MethodGet, "/v1/courses/:id", httprouter.Handle(app.showCourseHandler))
 	router.Handle(http.MethodPatch, "/v1/courses/:id", httprouter.Handle(app.updateCourseHandler))
 	router.Handle(http.MethodDelete, "/v1/courses/:id", httprouter.Handle(app.deleteCourseHandler))
-
 
 	// TODO: Add more routes as you build your API
 	// router.HandlerFunc(http.MethodGet, "/v1/officers", app.listOfficersHandler)

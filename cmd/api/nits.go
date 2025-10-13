@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 	"strconv"
+	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/Syha-01/national-inservice-training/internal/data"
 	"github.com/Syha-01/national-inservice-training/internal/validator"
+	"github.com/julienschmidt/httprouter"
 )
 
 func (a *application) createNitHandler(w http.ResponseWriter, r *http.Request) {
@@ -158,6 +158,29 @@ func (a *application) updateOfficerHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (a *application) deleteOfficerHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
+
+	err = a.models.Officers.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			a.notFoundResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"message": "officer successfully deleted"}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
 
 // listCoursesHandler returns all courses
 func (app *application) listCoursesHandler(w http.ResponseWriter, r *http.Request) {

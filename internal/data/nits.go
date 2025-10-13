@@ -47,7 +47,6 @@ type Course struct {
 	Version     int32     `json:"version"`
 }
 
-
 func ValidateNit(v *validator.Validator, nit *Nit) {
 	v.Check(nit.CourseID > 0, "course_id", "must be provided and be a positive integer")
 	v.Check(!nit.StartDate.IsZero(), "start_date", "must be provided")
@@ -151,7 +150,46 @@ func (m OfficerModel) Update(officer *Officer) error {
 	defer cancel()
 
 	_, err := m.DB.ExecContext(ctx, query, args...)
-	return err
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+	return nil
+}
+
+// Delete a specific Officer from the personnel table
+func (m OfficerModel) Delete(id int64) error {
+	// check if the id is valid
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+	// the SQL query to be executed against the database table
+	query := `
+		DELETE FROM personnel
+		WHERE id = $1
+		`
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
 }
 
 // GetAll retrieves all courses from the database
@@ -327,4 +365,3 @@ func (m CourseModel) Delete(id int64) error {
 
 	return nil
 }
-
