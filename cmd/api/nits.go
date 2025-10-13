@@ -52,7 +52,7 @@ func (a *application) displayOfficerHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	officer, err := a.models.Officers.Get(id)
+	officer, err := a.models.Officers.GetOfficer(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -81,7 +81,7 @@ func (a *application) updateOfficerHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	officer, err := a.models.Officers.Get(id)
+	officer, err := a.models.Officers.GetOfficer(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -141,7 +141,7 @@ func (a *application) updateOfficerHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = a.models.Officers.Update(officer)
+	err = a.models.Officers.UpdateOfficer(officer)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrEditConflict):
@@ -165,7 +165,7 @@ func (a *application) deleteOfficerHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = a.models.Officers.Delete(id)
+	err = a.models.Officers.DeleteOfficer(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -182,9 +182,22 @@ func (a *application) deleteOfficerHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (a *application) listOfficersHandler(w http.ResponseWriter, r *http.Request) {
+	officers, err := a.models.Officers.GetAllOfficers()
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"officers": officers}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
+
 // listCoursesHandler returns all courses
 func (app *application) listCoursesHandler(w http.ResponseWriter, r *http.Request) {
-	courses, err := app.models.Courses.GetAll()
+	courses, err := app.models.Courses.GetAllCourses()
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -204,7 +217,7 @@ func (app *application) showCourseHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	course, err := app.models.Courses.Get(id)
+	course, err := app.models.Courses.GetCourse(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -249,7 +262,7 @@ func (app *application) createCourseHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.models.Courses.Create(course)
+	err = app.models.Courses.CreateCourse(course)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -272,7 +285,7 @@ func (app *application) updateCourseHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	course, err := app.models.Courses.Get(id)
+	course, err := app.models.Courses.GetCourse(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -316,7 +329,7 @@ func (app *application) updateCourseHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.models.Courses.Update(course)
+	err = app.models.Courses.UpdateCourse(course)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -341,7 +354,7 @@ func (app *application) deleteCourseHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = app.models.Courses.Delete(id)
+	err = app.models.Courses.DeleteCourse(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):

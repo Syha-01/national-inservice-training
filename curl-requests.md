@@ -21,3 +21,9 @@ curl -X PATCH -H "Content-Type: application/json" -d '{"rank_id": 2, "is_active"
 
 // Failed validation
 curl -X PATCH -H "Content-Type: application/json" -d '{"first_name": ""}' localhost:4000/v1/officers/1
+
+//Delete
+curl -X DELETE localhost:4000/v1/officers/1
+
+//Get all officers
+curl -i localhost:4000/v1/officers

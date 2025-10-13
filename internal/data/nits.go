@@ -86,8 +86,8 @@ type CourseModel struct {
 	DB *sql.DB
 }
 
-// Get a specific Officer from the personnel table
-func (m OfficerModel) Get(id int64) (*Officer, error) {
+// GetOfficer retrieves a specific officer by ID.
+func (m OfficerModel) GetOfficer(id int64) (*Officer, error) {
 	// check if the id is valid
 	if id < 1 {
 		return nil, ErrRecordNotFound
@@ -128,8 +128,8 @@ func (m OfficerModel) Get(id int64) (*Officer, error) {
 	return &officer, nil
 }
 
-// Update a specific Officer in the personnel table
-func (m OfficerModel) Update(officer *Officer) error {
+// UpdateOfficer updates a specific officer's details.
+func (m OfficerModel) UpdateOfficer(officer *Officer) error {
 	query := `
 		UPDATE personnel
 		SET regulation_number = $1, first_name = $2, last_name = $3, sex = $4, rank_id = $5, formation_id = $6, posting_id = $7, is_active = $8, updated_at = NOW()
@@ -161,8 +161,55 @@ func (m OfficerModel) Update(officer *Officer) error {
 	return nil
 }
 
-// Delete a specific Officer from the personnel table
-func (m OfficerModel) Delete(id int64) error {
+// GetAllOfficers retrieves all officers from the personnel table.
+func (m OfficerModel) GetAllOfficers() ([]*Officer, error) {
+	query := `
+		SELECT id, regulation_number, first_name, last_name, sex, rank_id, formation_id, posting_id, is_active, created_at, updated_at
+		FROM personnel
+		ORDER BY id
+	`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	officers := []*Officer{}
+
+	for rows.Next() {
+		var officer Officer
+		err := rows.Scan(
+			&officer.ID,
+			&officer.RegulationNumber,
+			&officer.FirstName,
+			&officer.LastName,
+			&officer.Sex,
+			&officer.RankID,
+			&officer.FormationID,
+			&officer.PostingID,
+			&officer.IsActive,
+			&officer.CreatedAt,
+			&officer.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		officers = append(officers, &officer)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return officers, nil
+}
+
+// DeleteOfficer removes a specific officer from the database.
+func (m OfficerModel) DeleteOfficer(id int64) error {
 	// check if the id is valid
 	if id < 1 {
 		return ErrRecordNotFound
@@ -192,8 +239,8 @@ func (m OfficerModel) Delete(id int64) error {
 	return nil
 }
 
-// GetAll retrieves all courses from the database
-func (m CourseModel) GetAll() ([]*Course, error) {
+// GetAllCourses retrieves all courses from the database.
+func (m CourseModel) GetAllCourses() ([]*Course, error) {
 	query := `
 		SELECT id, title, description, category, credit_hours, created_at, updated_at
 		FROM courses
@@ -235,8 +282,8 @@ func (m CourseModel) GetAll() ([]*Course, error) {
 	return courses, nil
 }
 
-// Get retrieves a specific course by ID
-func (m CourseModel) Get(id int64) (*Course, error) {
+// GetCourse retrieves a specific course by ID.
+func (m CourseModel) GetCourse(id int64) (*Course, error) {
 	if id < 1 {
 		return nil, ErrRecordNotFound
 	}
@@ -274,8 +321,8 @@ func (m CourseModel) Get(id int64) (*Course, error) {
 	return &course, nil
 }
 
-// Create inserts a new course into the database
-func (m CourseModel) Create(course *Course) error {
+// CreateCourse inserts a new course into the database.
+func (m CourseModel) CreateCourse(course *Course) error {
 	query := `
 		INSERT INTO courses (title, description, category, credit_hours, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, NOW(), NOW())
@@ -301,8 +348,8 @@ func (m CourseModel) Create(course *Course) error {
 	return err
 }
 
-// Update modifies an existing course in the database
-func (m CourseModel) Update(course *Course) error {
+// UpdateCourse modifies an existing course in the database.
+func (m CourseModel) UpdateCourse(course *Course) error {
 	query := `
 		UPDATE courses
 		SET title = $1, description = $2, category = $3, credit_hours = $4, updated_at = NOW()
@@ -335,8 +382,8 @@ func (m CourseModel) Update(course *Course) error {
 	return nil
 }
 
-// Delete removes a course from the database
-func (m CourseModel) Delete(id int64) error {
+// DeleteCourse removes a course from the database.
+func (m CourseModel) DeleteCourse(id int64) error {
 	if id < 1 {
 		return ErrRecordNotFound
 	}
