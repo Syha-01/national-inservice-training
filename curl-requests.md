@@ -96,6 +96,9 @@ curl -X PATCH -H "Content-Type: application/json" -d '{
 // Update a facilitator's email
 curl -X PATCH -H "Content-Type: application/json" -d '{"email": "anothernewemail@example.com"}' localhost:4000/v1/facilitators/1
 
+//Delet a fascilitator
+curl -X DELETE localhost:4000/v1/facilitators/1
+
 
 
 
@@ -130,3 +133,5 @@ GET /v1/formations
 GET /v1/postings
 GET /v1/roles
 
+
+getofficer endpoint is being used in the update fascillitator enpoint to validate if the ID being entered exists as an officer

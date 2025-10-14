@@ -87,3 +87,33 @@ func (m FacilitatorModel) Update(facilitator *Facilitator) error {
 	}
 	return nil
 }
+
+// Delete deletes a specific facilitator.
+func (m FacilitatorModel) Delete(id int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+
+	query := `
+		DELETE FROM facilitators
+		WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
