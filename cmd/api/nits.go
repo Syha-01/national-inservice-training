@@ -542,3 +542,16 @@ func (a *application) deleteFacilitatorHandler(w http.ResponseWriter, r *http.Re
 		a.serverErrorResponse(w, r, err)
 	}
 }
+
+func (a *application) listFacilitatorsHandler(w http.ResponseWriter, r *http.Request) {
+	facilitators, err := a.models.Facilitators.GetAll()
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"facilitators": facilitators}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}

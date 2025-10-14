@@ -22,6 +22,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/officers", app.listOfficersHandler)
 
 	// facilitator routes
+	router.HandlerFunc(http.MethodGet, "/v1/facilitators", app.listFacilitatorsHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/facilitators/:id", app.showFacilitatorHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/facilitators/:id", app.updateFacilitatorHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/facilitators/:id", app.deleteFacilitatorHandler)

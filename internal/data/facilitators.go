@@ -88,6 +88,46 @@ func (m FacilitatorModel) Update(facilitator *Facilitator) error {
 	return nil
 }
 
+// GetAll returns a slice of all facilitators.
+func (m FacilitatorModel) GetAll() ([]*Facilitator, error) {
+	query := `
+		SELECT id, first_name, last_name, email, personnel_id
+		FROM facilitators
+		ORDER BY id`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	facilitators := []*Facilitator{}
+
+	for rows.Next() {
+		var facilitator Facilitator
+		err := rows.Scan(
+			&facilitator.ID,
+			&facilitator.FirstName,
+			&facilitator.LastName,
+			&facilitator.Email,
+			(*sql.NullInt64)(&facilitator.PersonnelID),
+		)
+		if err != nil {
+			return nil, err
+		}
+		facilitators = append(facilitators, &facilitator)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return facilitators, nil
+}
+
 // Delete deletes a specific facilitator.
 func (m FacilitatorModel) Delete(id int64) error {
 	if id < 1 {
