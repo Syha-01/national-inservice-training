@@ -78,3 +78,8 @@ curl -X POST -H "Content-Type: application/json" -d '{
 
 //run validator tests
 go test -v ./internal/data
+
+//------------------------------------ FACILITATORS ------------------------------------//
+
+// Get a specific facilitator
+curl -i localhost:4000/v1/facilitators/1
