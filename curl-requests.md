@@ -72,3 +72,9 @@ curl -X POST -H "Content-Type: application/json" -d '{
 ```
 
 */
+
+//------------------------------------ UNIT TESTING ------------------------------------//
+
+
+//run validator tests
+go test -v ./internal/data
