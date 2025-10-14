@@ -79,7 +79,54 @@ curl -X POST -H "Content-Type: application/json" -d '{
 //run validator tests
 go test -v ./internal/data
 
+
 //------------------------------------ FACILITATORS ------------------------------------//
 
 // Get a specific facilitator
 curl -i localhost:4000/v1/facilitators/1
+
+// Update a facilitator's information
+curl -X PATCH -H "Content-Type: application/json" -d '{
+    "first_name": "NewFirstName",
+    "last_name": "NewLastName",
+    "email": "newemail@example.com",
+    "personnel_id": 1
+}' localhost:4000/v1/facilitators/1
+
+// Update a facilitator's email
+curl -X PATCH -H "Content-Type: application/json" -d '{"email": "anothernewemail@example.com"}' localhost:4000/v1/facilitators/1
+
+
+
+
+upcomming routes:
+
+Facilitator Management
+You have a facilitators table, and these routes would manage that data.
+
+GET /v1/facilitators: List all available facilitators.
+POST /v1/facilitators: Add a new facilitator.
+GET /v1/facilitators/:id: Get the details of a specific facilitator.
+PATCH /v1/facilitators/:id: Update a facilitator's information.
+DELETE /v1/facilitators/:id: Remove a facilitator.
+POST /v1/sessions/:id/facilitators: Assign a facilitator to a specific training session.
+DELETE /v1/sessions/:id/facilitators/:facilitator_id: Remove a facilitator from a session.
+User and Authentication Management
+Your users table and the middleware.go file suggest that authentication is planned.
+
+POST /v1/users: Register a new user for the application.
+POST /v1/tokens: Authenticate a user and receive a token for accessing protected routes.
+Ratings and Feedback
+To use your course_ratings and facilitator_ratings tables:
+
+POST /v1/enrollments/:id/courserating: Submit a rating for a course, linked to a specific enrollment.
+POST /v1/enrollments/:id/facilitatorrating: Submit a rating for a facilitator.
+Lookup Data
+To make it easier for a front-end application to populate dropdown menus, you could add routes to expose your lookup tables:
+
+GET /v1/ranks
+GET /v1/regions
+GET /v1/formations
+GET /v1/postings
+GET /v1/roles
+

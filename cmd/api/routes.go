@@ -23,6 +23,7 @@ func (app *application) routes() http.Handler {
 
 	// facilitator routes
 	router.HandlerFunc(http.MethodGet, "/v1/facilitators/:id", app.showFacilitatorHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/facilitators/:id", app.updateFacilitatorHandler)
 
 	// COURSES ROUTES
 	router.HandlerFunc(http.MethodGet, "/v1/courses", app.listCoursesHandler)

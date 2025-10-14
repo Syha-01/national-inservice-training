@@ -56,3 +56,34 @@ func (m FacilitatorModel) Get(id int64) (*Facilitator, error) {
 
 	return &facilitator, nil
 }
+
+// Update updates a specific facilitator.
+func (m FacilitatorModel) Update(facilitator *Facilitator) error {
+	query := `
+		UPDATE facilitators
+		SET first_name = $1, last_name = $2, email = $3, personnel_id = $4
+		WHERE id = $5
+		RETURNING id`
+
+	args := []any{
+		facilitator.FirstName,
+		facilitator.LastName,
+		facilitator.Email,
+		sql.NullInt64(facilitator.PersonnelID),
+		facilitator.ID,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&facilitator.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+	return nil
+}

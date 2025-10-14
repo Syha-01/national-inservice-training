@@ -450,3 +450,71 @@ func (app *application) showFacilitatorHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 }
+
+func (a *application) updateFacilitatorHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
+
+	facilitator, err := a.models.Facilitators.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			a.notFoundResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	var input struct {
+		FirstName   *string `json:"first_name"`
+		LastName    *string `json:"last_name"`
+		Email       *string `json:"email"`
+		PersonnelID *int64  `json:"personnel_id"`
+	}
+
+	err = a.readJSON(w, r, &input)
+	if err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	if input.FirstName != nil {
+		facilitator.FirstName = *input.FirstName
+	}
+	if input.LastName != nil {
+		facilitator.LastName = *input.LastName
+	}
+	if input.Email != nil {
+		facilitator.Email = *input.Email
+	}
+	if input.PersonnelID != nil {
+		v := validator.New()
+		if _, err := a.models.Officers.GetOfficer(*input.PersonnelID); err != nil {
+			v.AddError("personnel_id", "personnel_id does not exist")
+			a.failedValidationResponse(w, r, v.Errors)
+			return
+		}
+		facilitator.PersonnelID.Int64 = *input.PersonnelID
+		facilitator.PersonnelID.Valid = true
+	}
+
+	err = a.models.Facilitators.Update(facilitator)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			a.editConflictResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"facilitator": facilitator}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
