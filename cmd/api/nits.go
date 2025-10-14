@@ -555,3 +555,49 @@ func (a *application) listFacilitatorsHandler(w http.ResponseWriter, r *http.Req
 		a.serverErrorResponse(w, r, err)
 	}
 }
+
+func (a *application) createFacilitatorHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		Email       string `json:"email"`
+		PersonnelID *int64 `json:"personnel_id"`
+	}
+
+	err := a.readJSON(w, r, &input)
+	if err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	facilitator := &data.Facilitator{
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Email:     input.Email,
+	}
+
+	if input.PersonnelID != nil {
+		v := validator.New()
+		if _, err := a.models.Officers.GetOfficer(*input.PersonnelID); err != nil {
+			v.AddError("personnel_id", "personnel_id does not exist")
+			a.failedValidationResponse(w, r, v.Errors)
+			return
+		}
+		facilitator.PersonnelID.Int64 = *input.PersonnelID
+		facilitator.PersonnelID.Valid = true
+	}
+
+	err = a.models.Facilitators.Create(facilitator)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/facilitators/%d", facilitator.ID))
+
+	err = a.writeJSON(w, http.StatusCreated, envelope{"facilitator": facilitator}, headers)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}

@@ -88,6 +88,26 @@ func (m FacilitatorModel) Update(facilitator *Facilitator) error {
 	return nil
 }
 
+// Create creates a new facilitator.
+func (m FacilitatorModel) Create(facilitator *Facilitator) error {
+	query := `
+		INSERT INTO facilitators (first_name, last_name, email, personnel_id)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id`
+
+	args := []any{
+		facilitator.FirstName,
+		facilitator.LastName,
+		facilitator.Email,
+		sql.NullInt64(facilitator.PersonnelID),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&facilitator.ID)
+}
+
 // GetAll returns a slice of all facilitators.
 func (m FacilitatorModel) GetAll() ([]*Facilitator, error) {
 	query := `
