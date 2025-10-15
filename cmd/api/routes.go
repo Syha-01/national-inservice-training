@@ -28,12 +28,20 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/facilitators/:id", app.updateFacilitatorHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/facilitators/:id", app.deleteFacilitatorHandler)
 
+	// Facilitator feedback routes
+	router.HandlerFunc(http.MethodPost, "/v1/facilitators/:id/feedback", app.createFacilitatorFeedbackHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/facilitators/:id/feedback", app.listFacilitatorFeedbackHandler)
+
 	// COURSES ROUTES
 	router.HandlerFunc(http.MethodGet, "/v1/courses", app.listCoursesHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/courses", app.createCourseHandler)
 	router.Handle(http.MethodGet, "/v1/courses/:id", httprouter.Handle(app.showCourseHandler))
 	router.Handle(http.MethodPatch, "/v1/courses/:id", httprouter.Handle(app.updateCourseHandler))
 	router.Handle(http.MethodDelete, "/v1/courses/:id", httprouter.Handle(app.deleteCourseHandler))
+
+	// Course feedback routes
+	router.HandlerFunc(http.MethodPost, "/v1/courses/:id/feedback", app.createCourseFeedbackHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/courses/:id/feedback", app.listCourseFeedbackHandler)
 
 	// TODO: Add more routes as you build your API
 	// router.HandlerFunc(http.MethodGet, "/v1/officers", app.listOfficersHandler)
