@@ -99,6 +99,61 @@ curl -X PATCH -H "Content-Type: application/json" -d '{"email": "anothernewemail
 //Delet a fascilitator
 curl -X DELETE localhost:4000/v1/facilitators/1
 
+//Get all facilitators
+curl -i localhost:4000/v1/facilitators
+
+// Add a new facilitator
+
+curl -X POST -H "Content-Type: application/json" -d '{
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "johndoe@example.com"
+}' localhost:4000/v1/facilitators
+
+curl -X POST -H "Content-Type: application/json" -d '{
+    "first_name": "Jane",
+    "last_name": "Doe",
+    "email": "janedoe@example.com",
+    "personnel_id": 1
+}' localhost:4000/v1/facilitators
+
+//------------------------------------ FEEDBACK ------------------------------------//
+
+
+__Create Facilitator Feedback:__
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{
+  "user_id": 1,
+  "rating": 5,
+  "comment": "Excellent facilitator!"
+}' http://localhost:4000/v1/facilitators/1/feedback
+```
+
+
+__List Facilitator Feedback:__
+
+```bash
+curl http://localhost:4000/v1/facilitators/1/feedback
+```
+
+### Course Feedback
+
+__Create Course Feedback:__
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{
+  "user_id": 1,
+  "rating": 4,
+  "comment": "The course was very informative."
+}' http://localhost:4000/v1/courses/1/feedback
+```
+
+__List Course Feedback:__
+
+```bash
+curl http://localhost:4000/v1/courses/1/feedback
+```
 
 
 
