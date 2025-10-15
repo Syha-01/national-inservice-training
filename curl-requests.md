@@ -22,6 +22,25 @@ With a specific user and database:
 psql --host=localhost --dbname=nits --username=nits
 ```
 
+## Healthcheck
+
+### Check the health of the API
+
+```bash
+curl -i localhost:4000/v1/healthcheck
+```
+
+## Nits
+
+### Create a new nit
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{
+    "title": "Test Nit",
+    "body": "This is a test nit."
+}' localhost:4000/v1/nits
+```
+
 ## Officers
 
 ### Get a specific officer
@@ -75,7 +94,7 @@ When adding a new officer, you need to provide the following fields in the JSON 
 - `posting_id` (integer, required): The ID of the officer's posting. This should correspond to an existing ID in the `postings` table.
 - `is_active` (boolean, required): A boolean value indicating whether the officer is currently active.
 
-**Example `curl` command:**
+**Sample `curl` command:**
 
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{
@@ -152,6 +171,64 @@ curl -X POST -H "Content-Type: application/json" -d '{
     "email": "janedoe@example.com",
     "personnel_id": 1
 }' localhost:4000/v1/facilitators
+```
+
+## Courses
+
+### Get all courses
+
+```bash
+curl -i localhost:4000/v1/courses
+```
+
+### Create a new course
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{
+    "title": "New Course",
+    "description": "This is a new course.",
+    "duration": 10
+}' localhost:4000/v1/courses
+```
+
+### Get a specific course
+
+```bash
+curl -i localhost:4000/v1/courses/1
+```
+
+### Update a course
+
+```bash
+curl -X PATCH -H "Content-Type: application/json" -d '{
+    "title": "Updated Course Title"
+}' localhost:4000/v1/courses/1
+```'Orange Walk Police Formation', (SELECT id FROM regions WHERE name = 'Northern Region')),
+('Police Headquarters - Belmopan', (SELECT id FROM regions WHERE name = 'Western Region')),
+('San Ignacio Police Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
+('Benque Viejo Police Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
+('Belmopan Police Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
+('Roaring Creek Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
+('Police Headquarters - Eastern Division', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Precinct 1', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Precinct 2', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Precinct 3', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Precinct 4', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Ladyville Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Hattieville Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Caye Caulker Police Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('San Pedro Police Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
+('Punta Gorda Police Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
+('Intermediate Southern Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
+('Placencia Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
+('Seine Bight Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
+('Hopkins Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
+('Dangriga Police Formation', (SELECT id FROM regions WHERE name = 'Southern Region'));
+
+### Delete a course
+
+```bash
+curl -X DELETE localhost:4000/v1/courses/1
 ```
 
 ## Feedback

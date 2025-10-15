@@ -51,7 +51,7 @@ func (m FeedbackModel) GetAllForFacilitator(facilitatorID int64) ([]*Facilitator
 	}
 	defer rows.Close()
 
-	var feedbacks []*FacilitatorFeedback
+	feedbacks := []*FacilitatorFeedback{}
 
 	for rows.Next() {
 		var feedback FacilitatorFeedback
@@ -114,7 +114,7 @@ func (m FeedbackModel) GetAllForCourse(courseID int64) ([]*CourseFeedback, error
 	}
 	defer rows.Close()
 
-	var feedbacks []*CourseFeedback
+	feedbacks := []*CourseFeedback{}
 
 	for rows.Next() {
 		var feedback CourseFeedback

@@ -56,21 +56,6 @@ func (app *application) listFacilitatorFeedbackHandler(w http.ResponseWriter, r 
 		return
 	}
 
-	facilitator, err := app.models.Facilitators.Get(id)
-	if err != nil {
-		switch {
-		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
-		default:
-			app.serverErrorResponse(w, r, err)
-		}
-		return
-	}
-	if facilitator == nil {
-		app.notFoundResponse(w, r)
-		return
-	}
-
 	feedback, err := app.models.Feedback.GetAllForFacilitator(id)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
