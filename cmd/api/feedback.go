@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -15,9 +16,9 @@ func (app *application) createFacilitatorFeedbackHandler(w http.ResponseWriter, 
 	}
 
 	var input struct {
-		UserID  int64  `json:"user_id"`
-		Rating  int    `json:"rating"`
-		Comment string `json:"comment"`
+		SessionEnrollmentID int64  `json:"session_enrollment_id"`
+		Score               int    `json:"score"`
+		Comment             string `json:"comment"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -27,10 +28,10 @@ func (app *application) createFacilitatorFeedbackHandler(w http.ResponseWriter, 
 	}
 
 	feedback := &data.FacilitatorFeedback{
-		FacilitatorID: id,
-		UserID:        input.UserID,
-		Rating:        input.Rating,
-		Comment:       input.Comment,
+		FacilitatorID:       id,
+		SessionEnrollmentID: input.SessionEnrollmentID,
+		Score:               input.Score,
+		Comment:             input.Comment,
 	}
 
 	err = app.models.Feedback.InsertFacilitatorFeedback(feedback)
@@ -55,6 +56,21 @@ func (app *application) listFacilitatorFeedbackHandler(w http.ResponseWriter, r 
 		return
 	}
 
+	facilitator, err := app.models.Facilitators.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	if facilitator == nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
 	feedback, err := app.models.Feedback.GetAllForFacilitator(id)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -68,16 +84,16 @@ func (app *application) listFacilitatorFeedbackHandler(w http.ResponseWriter, r 
 }
 
 func (app *application) createCourseFeedbackHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
+	_, err := app.readIDParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
 	var input struct {
-		UserID  int64  `json:"user_id"`
-		Rating  int    `json:"rating"`
-		Comment string `json:"comment"`
+		SessionEnrollmentID int64  `json:"session_enrollment_id"`
+		Score               int    `json:"score"`
+		Comment             string `json:"comment"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -87,10 +103,9 @@ func (app *application) createCourseFeedbackHandler(w http.ResponseWriter, r *ht
 	}
 
 	feedback := &data.CourseFeedback{
-		CourseID: id,
-		UserID:   input.UserID,
-		Rating:   input.Rating,
-		Comment:  input.Comment,
+		SessionEnrollmentID: input.SessionEnrollmentID,
+		Score:               input.Score,
+		Comment:             input.Comment,
 	}
 
 	err = app.models.Feedback.InsertCourseFeedback(feedback)
@@ -111,6 +126,21 @@ func (app *application) createCourseFeedbackHandler(w http.ResponseWriter, r *ht
 func (app *application) listCourseFeedbackHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	course, err := app.models.Courses.GetCourse(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	if course == nil {
 		app.notFoundResponse(w, r)
 		return
 	}
