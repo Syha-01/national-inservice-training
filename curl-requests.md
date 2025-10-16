@@ -269,28 +269,41 @@ curl -X POST -H "Content-Type: application/json" -d '{
 curl http://localhost:4000/v1/courses/1/feedback
 ```
 
-## Upcoming Routes
+## New Endpoints
 
-### Facilitator Management
-- `GET /v1/facilitators`: List all available facilitators.
-- `POST /v1/facilitators`: Add a new facilitator.
-- `GET /v1/facilitators/:id`: Get the details of a specific facilitator.
-- `PATCH /v1/facilitators/:id`: Update a facilitator's information.
-- `DELETE /v1/facilitators/:id`: Remove a facilitator.
-- `POST /v1/sessions/:id/facilitators`: Assign a facilitator to a specific training session.
-- `DELETE /v1/sessions/:id/facilitators/:facilitator_id`: Remove a facilitator from a session.
+### Facilitator Session Management
 
-### User and Authentication Management
-- `POST /v1/users`: Register a new user for the application.
-- `POST /v1/tokens`: Authenticate a user and receive a token for accessing protected routes.
+#### Assign a facilitator to a session
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{
+    "facilitator_id": 1
+}' localhost:4000/v1/sessions/1/facilitators
+```
+
+#### Remove a facilitator from a session
+
+```bash
+curl -X DELETE localhost:4000/v1/sessions/1/facilitators/1
+```
 
 ### Ratings and Feedback
-- `POST /v1/enrollments/:id/courserating`: Submit a rating for a course, linked to a specific enrollment.
-- `POST /v1/enrollments/:id/facilitatorrating`: Submit a rating for a facilitator.
 
-### Lookup Data
-- `GET /v1/ranks`
-- `GET /v1/regions`
-- `GET /v1/formations`
-- `GET /v1/postings`
-- `GET /v1/roles`
+#### Submit a rating for a course, linked to a specific enrollment
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{
+    "score": 5,
+    "comment": "Great course!"
+}' localhost:4000/v1/enrollments/1/courserating
+```
+
+#### Submit a rating for a facilitator, linked to a specific enrollment
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{
+    "facilitator_id": 1,
+    "score": 5,
+    "comment": "Excellent facilitator!"
+}' localhost:4000/v1/enrollments/1/facilitatorrating
+```

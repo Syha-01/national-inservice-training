@@ -68,6 +68,86 @@ func (app *application) listFacilitatorFeedbackHandler(w http.ResponseWriter, r 
 	}
 }
 
+func (app *application) createCourseRatingHandler(w http.ResponseWriter, r *http.Request) {
+	enrollmentID, err := app.readIDParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	var input struct {
+		Score   int    `json:"score"`
+		Comment string `json:"comment"`
+	}
+
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	feedback := &data.CourseFeedback{
+		SessionEnrollmentID: enrollmentID,
+		Score:               input.Score,
+		Comment:             input.Comment,
+	}
+
+	err = app.models.Feedback.InsertCourseFeedback(feedback)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/courses/%d/feedback/%d", feedback.CourseID, feedback.ID))
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"feedback": feedback}, headers)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) createFacilitatorRatingHandler(w http.ResponseWriter, r *http.Request) {
+	enrollmentID, err := app.readIDParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	var input struct {
+		FacilitatorID int64  `json:"facilitator_id"`
+		Score         int    `json:"score"`
+		Comment       string `json:"comment"`
+	}
+
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	feedback := &data.FacilitatorFeedback{
+		FacilitatorID:       input.FacilitatorID,
+		SessionEnrollmentID: enrollmentID,
+		Score:               input.Score,
+		Comment:             input.Comment,
+	}
+
+	err = app.models.Feedback.InsertFacilitatorFeedback(feedback)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/facilitators/%d/feedback/%d", feedback.FacilitatorID, feedback.ID))
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"feedback": feedback}, headers)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
 func (app *application) createCourseFeedbackHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := app.readIDParam(r)
 	if err != nil {

@@ -177,3 +177,42 @@ func (m FacilitatorModel) Delete(id int64) error {
 
 	return nil
 }
+
+// AssignToSession assigns a facilitator to a session.
+func (m FacilitatorModel) AssignToSession(sessionID, facilitatorID int64) error {
+	query := `
+		INSERT INTO session_facilitators (session_id, facilitator_id)
+		VALUES ($1, $2)`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := m.DB.ExecContext(ctx, query, sessionID, facilitatorID)
+	return err
+}
+
+// RemoveFromSession removes a facilitator from a session.
+func (m FacilitatorModel) RemoveFromSession(sessionID, facilitatorID int64) error {
+	query := `
+		DELETE FROM session_facilitators
+		WHERE session_id = $1 AND facilitator_id = $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, sessionID, facilitatorID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}

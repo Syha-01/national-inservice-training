@@ -86,6 +86,49 @@ type CourseModel struct {
 	DB *sql.DB
 }
 
+// NitModel wraps the database connection pool.
+type NitModel struct {
+	DB *sql.DB
+}
+
+// Get retrieves a specific training session by ID.
+func (m NitModel) Get(id int64) (*Nit, error) {
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+
+	query := `
+		SELECT id, course_id, start_date, end_date, location, created_at, version
+		FROM training_sessions
+		WHERE id = $1`
+
+	var nit Nit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&nit.ID,
+		&nit.CourseID,
+		&nit.StartDate,
+		&nit.EndDate,
+		&nit.Location,
+		&nit.CreatedAt,
+		&nit.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &nit, nil
+}
+
 // GetOfficer retrieves a specific officer by ID.
 func (m OfficerModel) GetOfficer(id int64) (*Officer, error) {
 	// check if the id is valid
@@ -261,7 +304,6 @@ func (m OfficerModel) CreateOfficer(officer *Officer) error {
 
 	return m.DB.QueryRowContext(ctx, query, args...).Scan(&officer.ID, &officer.CreatedAt, &officer.UpdatedAt)
 }
-
 
 // GetAllCourses retrieves all courses from the database.
 func (m CourseModel) GetAllCourses() ([]*Course, error) {

@@ -27,6 +27,8 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/facilitators/:id", app.showFacilitatorHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/facilitators/:id", app.updateFacilitatorHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/facilitators/:id", app.deleteFacilitatorHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/sessions/:id/facilitators", app.assignFacilitatorToSessionHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/sessions/:id/facilitators/:facilitator_id", app.removeFacilitatorFromSessionHandler)
 
 	// Facilitator feedback routes
 	router.HandlerFunc(http.MethodPost, "/v1/facilitators/:id/feedback", app.createFacilitatorFeedbackHandler)
@@ -42,6 +44,14 @@ func (app *application) routes() http.Handler {
 	// Course feedback routes
 	router.HandlerFunc(http.MethodPost, "/v1/courses/:id/feedback", app.createCourseFeedbackHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/courses/:id/feedback", app.listCourseFeedbackHandler)
+
+	// User routes
+	// router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
+	// router.HandlerFunc(http.MethodPost, "/v1/tokens", app.createAuthenticationTokenHandler)
+
+	// Ratings and feedback routes
+	router.HandlerFunc(http.MethodPost, "/v1/enrollments/:id/courserating", app.createCourseRatingHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/enrollments/:id/facilitatorrating", app.createFacilitatorRatingHandler)
 
 	// TODO: Add more routes as you build your API
 	// router.HandlerFunc(http.MethodGet, "/v1/officers", app.listOfficersHandler)
