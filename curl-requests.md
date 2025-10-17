@@ -34,10 +34,16 @@ curl -i localhost:4000/v1/healthcheck
 
 ### Create a new nit
 
+**Format:** `localhost:4000/v1/nits`
+
+**Important:** This request will fail if the `course_id` does not exist in the database.
+
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{
-    "title": "Test Nit",
-    "body": "This is a test nit."
+    "course_id": [course_id],
+    "start_date": "2025-01-01T00:00:00Z",
+    "end_date": "2025-01-02T00:00:00Z",
+    "location": "Belize City"
 }' localhost:4000/v1/nits
 ```
 
@@ -45,20 +51,32 @@ curl -X POST -H "Content-Type: application/json" -d '{
 
 ### Get a specific officer
 
+**Format:** `localhost:4000/v1/officers/[officer_id]`
+
+- `[officer_id]`: The ID of the officer.
+
 ```bash
-curl -i localhost:4000/v1/officers/1
+curl -i localhost:4000/v1/officers/[officer_id]
 ```
 
 ### Update an officer's first name
 
+**Format:** `localhost:4000/v1/officers/[officer_id]`
+
+- `[officer_id]`: The ID of the officer.
+
 ```bash
-curl -X PATCH -H "Content-Type: application/json" -d '{"first_name": "NewFirstName"}' localhost:4000/v1/officers/1
+curl -X PATCH -H "Content-Type: application/json" -d '{"first_name": "NewFirstName"}' localhost:4000/v1/officers/[officer_id]
 ```
 
 ### Update multiple fields
 
+**Format:** `localhost:4000/v1/officers/[officer_id]`
+
+- `[officer_id]`: The ID of the officer.
+
 ```bash
-curl -X PATCH -H "Content-Type: application/json" -d '{"rank_id": 2, "is_active": false}' localhost:4000/v1/officers/1
+curl -X PATCH -H "Content-Type: application/json" -d '{"rank_id": 2, "is_active": false}' localhost:4000/v1/officers/[officer_id]
 ```
 
 ### Failed validation
@@ -66,13 +84,17 @@ curl -X PATCH -H "Content-Type: application/json" -d '{"rank_id": 2, "is_active"
 This example will fail validation because the `first_name` is empty.
 
 ```bash
-curl -X PATCH -H "Content-Type: application/json" -d '{"first_name": ""}' localhost:4000/v1/officers/1
+curl -X PATCH -H "Content-Type: application/json" -d '{"first_name": ""}' localhost:4000/v1/officers/[officer_id]
 ```
 
 ### Delete an officer
 
+**Format:** `localhost:4000/v1/officers/[officer_id]`
+
+- `[officer_id]`: The ID of the officer.
+
 ```bash
-curl -X DELETE localhost:4000/v1/officers/1
+curl -X DELETE localhost:4000/v1/officers/[officer_id]
 ```
 
 ### Get all officers
@@ -121,11 +143,19 @@ go test -v ./internal/data
 
 ### Get a specific facilitator
 
+**Format:** `localhost:4000/v1/facilitators/[facilitator_id]`
+
+- `[facilitator_id]`: The ID of the facilitator.
+
 ```bash
-curl -i localhost:4000/v1/facilitators/1
+curl -i localhost:4000/v1/facilitators/[facilitator_id]
 ```
 
 ### Update a facilitator's information
+
+**Format:** `localhost:4000/v1/facilitators/[facilitator_id]`
+
+- `[facilitator_id]`: The ID of the facilitator.
 
 ```bash
 curl -X PATCH -H "Content-Type: application/json" -d '{
@@ -133,19 +163,27 @@ curl -X PATCH -H "Content-Type: application/json" -d '{
     "last_name": "NewLastName",
     "email": "newemail@example.com",
     "personnel_id": 1
-}' localhost:4000/v1/facilitators/1
+}' localhost:4000/v1/facilitators/[facilitator_id]
 ```
 
 ### Update a facilitator's email
 
+**Format:** `localhost:4000/v1/facilitators/[facilitator_id]`
+
+- `[facilitator_id]`: The ID of the facilitator.
+
 ```bash
-curl -X PATCH -H "Content-Type: application/json" -d '{"email": "anothernewemail@example.com"}' localhost:4000/v1/facilitators/1
+curl -X PATCH -H "Content-Type: application/json" -d '{"email": "anothernewemail@example.com"}' localhost:4000/v1/facilitators/[facilitator_id]
 ```
 
 ### Delete a facilitator
 
+**Format:** `localhost:4000/v1/facilitators/[facilitator_id]`
+
+- `[facilitator_id]`: The ID of the facilitator.
+
 ```bash
-curl -X DELETE localhost:4000/v1/facilitators/1
+curl -X DELETE localhost:4000/v1/facilitators/[facilitator_id]
 ```
 
 ### Get all facilitators
@@ -187,48 +225,41 @@ curl -i localhost:4000/v1/courses
 curl -X POST -H "Content-Type: application/json" -d '{
     "title": "New Course",
     "description": "This is a new course.",
-    "duration": 10
+    "category": "Mandatory",
+    "credit_hours": 3
 }' localhost:4000/v1/courses
 ```
 
 ### Get a specific course
 
+**Format:** `localhost:4000/v1/courses/[course_id]`
+
+- `[course_id]`: The ID of the course.
+
 ```bash
-curl -i localhost:4000/v1/courses/1
+curl -i localhost:4000/v1/courses/[course_id]
 ```
 
 ### Update a course
 
+**Format:** `localhost:4000/v1/courses/[course_id]`
+
+- `[course_id]`: The ID of the course.
+
 ```bash
 curl -X PATCH -H "Content-Type: application/json" -d '{
     "title": "Updated Course Title"
-}' localhost:4000/v1/courses/1
-```'Orange Walk Police Formation', (SELECT id FROM regions WHERE name = 'Northern Region')),
-('Police Headquarters - Belmopan', (SELECT id FROM regions WHERE name = 'Western Region')),
-('San Ignacio Police Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
-('Benque Viejo Police Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
-('Belmopan Police Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
-('Roaring Creek Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Western Region')),
-('Police Headquarters - Eastern Division', (SELECT id FROM regions WHERE name = 'Eastern Division')),
-('Precinct 1', (SELECT id FROM regions WHERE name = 'Eastern Division')),
-('Precinct 2', (SELECT id FROM regions WHERE name = 'Eastern Division')),
-('Precinct 3', (SELECT id FROM regions WHERE name = 'Eastern Division')),
-('Precinct 4', (SELECT id FROM regions WHERE name = 'Eastern Division')),
-('Ladyville Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
-('Hattieville Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
-('Caye Caulker Police Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
-('San Pedro Police Formation', (SELECT id FROM regions WHERE name = 'Eastern Division')),
-('Punta Gorda Police Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
-('Intermediate Southern Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
-('Placencia Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
-('Seine Bight Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
-('Hopkins Police Sub-Formation', (SELECT id FROM regions WHERE name = 'Southern Region')),
-('Dangriga Police Formation', (SELECT id FROM regions WHERE name = 'Southern Region'));
+}' localhost:4000/v1/courses/[course_id]
+```
 
 ### Delete a course
 
+**Format:** `localhost:4000/v1/courses/[course_id]`
+
+- `[course_id]`: The ID of the course.
+
 ```bash
-curl -X DELETE localhost:4000/v1/courses/1
+curl -X DELETE localhost:4000/v1/courses/[course_id]
 ```
 
 ## Feedback
@@ -237,36 +268,56 @@ curl -X DELETE localhost:4000/v1/courses/1
 
 #### Create Facilitator Feedback
 
+**Format:** `http://localhost:4000/v1/facilitators/[facilitator_id]/feedback`
+
+- `[facilitator_id]`: The ID of the facilitator.
+
+**Important:** This request will fail if the `facilitator_id` or the `session_enrollment_id` in the request body does not exist in the database.
+
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{
-  "user_id": 1,
-  "rating": 5,
+  "session_enrollment_id": [session_enrollment_id],
+  "score": 5,
   "comment": "Excellent facilitator!"
-}' http://localhost:4000/v1/facilitators/1/feedback
+}' http://localhost:4000/v1/facilitators/[facilitator_id]/feedback
 ```
 
 #### List Facilitator Feedback
 
+**Format:** `http://localhost:4000/v1/facilitators/[facilitator_id]/feedback`
+
+- `[facilitator_id]`: The ID of the facilitator.
+
 ```bash
-curl http://localhost:4000/v1/facilitators/1/feedback
+curl http://localhost:4000/v1/facilitators/[facilitator_id]/feedback
 ```
 
 ### Course Feedback
 
 #### Create Course Feedback
 
+**Format:** `http://localhost:4000/v1/courses/[course_id]/feedback`
+
+- `[course_id]`: The ID of the course.
+
+**Important:** This request will fail if the `course_id` or the `session_enrollment_id` in the request body does not exist in the database.
+
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{
-  "user_id": 1,
-  "rating": 4,
+  "session_enrollment_id": [session_enrollment_id],
+  "score": 4,
   "comment": "The course was very informative."
-}' http://localhost:4000/v1/courses/1/feedback
+}' http://localhost:4000/v1/courses/[course_id]/feedback
 ```
 
 #### List Course Feedback
 
+**Format:** `http://localhost:4000/v1/courses/[course_id]/feedback`
+
+- `[course_id]`: The ID of the course.
+
 ```bash
-curl http://localhost:4000/v1/courses/1/feedback
+curl http://localhost:4000/v1/courses/[course_id]/feedback
 ```
 
 ## New Endpoints
@@ -275,35 +326,59 @@ curl http://localhost:4000/v1/courses/1/feedback
 
 #### Assign a facilitator to a session
 
+**Format:** `localhost:4000/v1/sessions/[session_id]/facilitators`
+
+- `[session_id]`: The ID of the training session.
+
+**Important:** This request will fail if the `session_id` or the `facilitator_id` in the request body does not exist in the database.
+
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{
-    "facilitator_id": 1
-}' localhost:4000/v1/sessions/1/facilitators
+    "facilitator_id": [facilitator_id]
+}' localhost:4000/v1/sessions/[session_id]/facilitators
 ```
 
 #### Remove a facilitator from a session
 
+**Format:** `localhost:4000/v1/sessions/[session_id]/facilitators/[facilitator_id]`
+
+- `[session_id]`: The ID of the training session.
+- `[facilitator_id]`: The ID of the facilitator to be removed.
+
+**Important:** This request will fail if the `session_id` or `facilitator_id` does not exist in the database.
+
 ```bash
-curl -X DELETE localhost:4000/v1/sessions/1/facilitators/1
+curl -X DELETE localhost:4000/v1/sessions/[session_id]/facilitators/[facilitator_id]
 ```
 
 ### Ratings and Feedback
 
 #### Submit a rating for a course, linked to a specific enrollment
 
+**Format:** `localhost:4000/v1/enrollments/[enrollment_id]/courserating`
+
+- `[enrollment_id]`: The ID of the session enrollment.
+
+**Important:** This request will fail if the `enrollment_id` does not exist in the database.
+
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{
     "score": 5,
     "comment": "Great course!"
-}' localhost:4000/v1/enrollments/1/courserating
+}' localhost:4000/v1/enrollments/[enrollment_id]/courserating
 ```
 
 #### Submit a rating for a facilitator, linked to a specific enrollment
 
+**Format:** `localhost:4000/v1/enrollments/[enrollment_id]/facilitatorrating`
+
+- `[enrollment_id]`: The ID of the session enrollment.
+
+**Important:** This request will fail if the `enrollment_id` or the `facilitator_id` in the request body does not exist in the database.
+
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{
-    "facilitator_id": 1,
+    "facilitator_id": [facilitator_id],
     "score": 5,
     "comment": "Excellent facilitator!"
-}' localhost:4000/v1/enrollments/1/facilitatorrating
-```
+}' localhost:4000/v1/enrollments/[enrollment_id]/facilitatorrating
