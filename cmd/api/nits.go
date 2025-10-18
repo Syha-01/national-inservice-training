@@ -234,29 +234,63 @@ func (a *application) deleteOfficerHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (a *application) listOfficersHandler(w http.ResponseWriter, r *http.Request) {
-	officers, err := a.models.Officers.GetAllOfficers()
+	var input struct {
+		data.Filters
+	}
+
+	v := validator.New()
+	qs := r.URL.Query()
+
+	input.Filters.Page = a.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = a.readInt(qs, "page_size", 20, v)
+
+	data.ValidateFilters(v, input.Filters)
+
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	officers, metadata, err := a.models.Officers.GetAllOfficers(input.Filters)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = a.writeJSON(w, http.StatusOK, envelope{"officers": officers}, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"officers": officers, "metadata": metadata}, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
 }
 
 // listCoursesHandler returns all courses
-func (app *application) listCoursesHandler(w http.ResponseWriter, r *http.Request) {
-	courses, err := app.models.Courses.GetAllCourses()
-	if err != nil {
-		app.serverErrorResponse(w, r, err)
+func (a *application) listCoursesHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		data.Filters
+	}
+
+	v := validator.New()
+	qs := r.URL.Query()
+
+	input.Filters.Page = a.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = a.readInt(qs, "page_size", 20, v)
+
+	data.ValidateFilters(v, input.Filters)
+
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"courses": courses}, nil)
+	courses, metadata, err := a.models.Courses.GetAllCourses(input.Filters)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"courses": courses, "metadata": metadata}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
 	}
 }
 

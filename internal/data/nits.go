@@ -205,27 +205,30 @@ func (m OfficerModel) UpdateOfficer(officer *Officer) error {
 }
 
 // GetAllOfficers retrieves all officers from the personnel table.
-func (m OfficerModel) GetAllOfficers() ([]*Officer, error) {
+func (m OfficerModel) GetAllOfficers(filters Filters) ([]*Officer, Metadata, error) {
 	query := `
-		SELECT id, regulation_number, first_name, last_name, sex, rank_id, formation_id, posting_id, is_active, created_at, updated_at
+		SELECT COUNT(*) OVER(), id, regulation_number, first_name, last_name, sex, rank_id, formation_id, posting_id, is_active, created_at, updated_at
 		FROM personnel
 		ORDER BY id
+		LIMIT $1 OFFSET $2
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query)
+	rows, err := m.DB.QueryContext(ctx, query, filters.limit(), filters.offset())
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 	defer rows.Close()
 
+	totalRecords := 0
 	officers := []*Officer{}
 
 	for rows.Next() {
 		var officer Officer
 		err := rows.Scan(
+			&totalRecords,
 			&officer.ID,
 			&officer.RegulationNumber,
 			&officer.FirstName,
@@ -239,16 +242,18 @@ func (m OfficerModel) GetAllOfficers() ([]*Officer, error) {
 			&officer.UpdatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 		officers = append(officers, &officer)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return officers, nil
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return officers, metadata, nil
 }
 
 // DeleteOfficer removes a specific officer from the database.
@@ -306,27 +311,30 @@ func (m OfficerModel) CreateOfficer(officer *Officer) error {
 }
 
 // GetAllCourses retrieves all courses from the database.
-func (m CourseModel) GetAllCourses() ([]*Course, error) {
+func (m CourseModel) GetAllCourses(filters Filters) ([]*Course, Metadata, error) {
 	query := `
-		SELECT id, title, description, category, credit_hours, created_at, updated_at
+		SELECT COUNT(*) OVER(), id, title, description, category, credit_hours, created_at, updated_at
 		FROM courses
 		ORDER BY id
+		LIMIT $1 OFFSET $2
 	`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query)
+	rows, err := m.DB.QueryContext(ctx, query, filters.limit(), filters.offset())
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 	defer rows.Close()
 
+	totalRecords := 0
 	courses := []*Course{}
 
 	for rows.Next() {
 		var course Course
 		err := rows.Scan(
+			&totalRecords,
 			&course.ID,
 			&course.Title,
 			&course.Description,
@@ -336,16 +344,18 @@ func (m CourseModel) GetAllCourses() ([]*Course, error) {
 			&course.UpdatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 		courses = append(courses, &course)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return courses, nil
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return courses, metadata, nil
 }
 
 // GetCourse retrieves a specific course by ID.

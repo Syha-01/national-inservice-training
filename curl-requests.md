@@ -382,3 +382,47 @@ curl -X POST -H "Content-Type: application/json" -d '{
     "score": 5,
     "comment": "Excellent facilitator!"
 }' localhost:4000/v1/enrollments/[enrollment_id]/facilitatorrating
+
+## Pagination
+
+The `GET /v1/officers` and `GET /v1/courses` endpoints now support pagination. You can control the number of results and the page number by using the `page` and `page_size` query string parameters.
+
+### Supported Routes
+
+- `localhost:4000/v1/officers`
+- `localhost:4000/v1/courses`
+
+### Parameters
+
+- `page` (integer): Specifies the page number of results to return. Defaults to `1`. Must be greater than zero and at most 500.
+- `page_size` (integer): Specifies the number of records to return per page. Defaults to `20`. Must be greater than zero and at most 100.
+
+### Sample Requests
+
+#### Get the first page of officers with 5 records per page
+
+```bash
+curl -i "localhost:4000/v1/officers?page=1&page_size=5"
+```
+
+#### Get the second page of officers with 5 records per page
+
+```bash
+curl -i "localhost:4000/v1/officers?page=2&page_size=5"
+```
+
+#### Get the first page of courses with 10 records per page
+
+```bash
+curl -i "localhost:4000/v1/courses?page=1&page_size=10"
+```
+
+### Response Metadata
+
+The response for a paginated request will include a `metadata` object with the following fields:
+
+- `current_page`: The current page number.
+- `page_size`: The number of records per page.
+- `first_page`: The first page number.
+- `last_page`: The last page number.
+- `total_records`: The total number of records available.
