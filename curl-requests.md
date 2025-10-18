@@ -391,6 +391,7 @@ The `GET /v1/officers` and `GET /v1/courses` endpoints now support pagination. Y
 
 - `localhost:4000/v1/officers`
 - `localhost:4000/v1/courses`
+- `localhost:4000/v1/facilitators`
 
 ### Parameters
 
@@ -415,6 +416,12 @@ curl -i "localhost:4000/v1/officers?page=2&page_size=5"
 
 ```bash
 curl -i "localhost:4000/v1/courses?page=1&page_size=10"
+```
+
+#### Get the first page of facilitators with 5 records per page
+
+```bash
+curl -i "localhost:4000/v1/facilitators?page=1&page_size=5"
 ```
 
 ### Response Metadata

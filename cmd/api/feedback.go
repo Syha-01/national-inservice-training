@@ -8,10 +8,10 @@ import (
 	"github.com/Syha-01/national-inservice-training/internal/data"
 )
 
-func (app *application) createFacilitatorFeedbackHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
+func (a *application) createFacilitatorFeedbackHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(w, r)
+		a.notFoundResponse(w, r)
 		return
 	}
 
@@ -21,9 +21,9 @@ func (app *application) createFacilitatorFeedbackHandler(w http.ResponseWriter, 
 		Comment             string `json:"comment"`
 	}
 
-	err = app.readJSON(w, r, &input)
+	err = a.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		a.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -34,44 +34,44 @@ func (app *application) createFacilitatorFeedbackHandler(w http.ResponseWriter, 
 		Comment:             input.Comment,
 	}
 
-	err = app.models.Feedback.InsertFacilitatorFeedback(feedback)
+	err = a.models.Feedback.InsertFacilitatorFeedback(feedback)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 		return
 	}
 
 	headers := make(http.Header)
 	headers.Set("Location", fmt.Sprintf("/v1/facilitators/%d/feedback/%d", feedback.FacilitatorID, feedback.ID))
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"feedback": feedback}, headers)
+	err = a.writeJSON(w, http.StatusCreated, envelope{"feedback": feedback}, headers)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) listFacilitatorFeedbackHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
+func (a *application) listFacilitatorFeedbackHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(w, r)
+		a.notFoundResponse(w, r)
 		return
 	}
 
-	feedback, err := app.models.Feedback.GetAllForFacilitator(id)
+	feedback, err := a.models.Feedback.GetAllForFacilitator(id)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"feedback": feedback}, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"feedback": feedback}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) createCourseRatingHandler(w http.ResponseWriter, r *http.Request) {
-	enrollmentID, err := app.readIDParam(r)
+func (a *application) createCourseRatingHandler(w http.ResponseWriter, r *http.Request) {
+	enrollmentID, err := a.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(w, r)
+		a.notFoundResponse(w, r)
 		return
 	}
 
@@ -80,9 +80,9 @@ func (app *application) createCourseRatingHandler(w http.ResponseWriter, r *http
 		Comment string `json:"comment"`
 	}
 
-	err = app.readJSON(w, r, &input)
+	err = a.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		a.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -92,25 +92,25 @@ func (app *application) createCourseRatingHandler(w http.ResponseWriter, r *http
 		Comment:             input.Comment,
 	}
 
-	err = app.models.Feedback.InsertCourseFeedback(feedback)
+	err = a.models.Feedback.InsertCourseFeedback(feedback)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 		return
 	}
 
 	headers := make(http.Header)
 	headers.Set("Location", fmt.Sprintf("/v1/courses/%d/feedback/%d", feedback.CourseID, feedback.ID))
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"feedback": feedback}, headers)
+	err = a.writeJSON(w, http.StatusCreated, envelope{"feedback": feedback}, headers)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) createFacilitatorRatingHandler(w http.ResponseWriter, r *http.Request) {
-	enrollmentID, err := app.readIDParam(r)
+func (a *application) createFacilitatorRatingHandler(w http.ResponseWriter, r *http.Request) {
+	enrollmentID, err := a.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(w, r)
+		a.notFoundResponse(w, r)
 		return
 	}
 
@@ -120,9 +120,9 @@ func (app *application) createFacilitatorRatingHandler(w http.ResponseWriter, r 
 		Comment       string `json:"comment"`
 	}
 
-	err = app.readJSON(w, r, &input)
+	err = a.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		a.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -133,25 +133,25 @@ func (app *application) createFacilitatorRatingHandler(w http.ResponseWriter, r 
 		Comment:             input.Comment,
 	}
 
-	err = app.models.Feedback.InsertFacilitatorFeedback(feedback)
+	err = a.models.Feedback.InsertFacilitatorFeedback(feedback)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 		return
 	}
 
 	headers := make(http.Header)
 	headers.Set("Location", fmt.Sprintf("/v1/facilitators/%d/feedback/%d", feedback.FacilitatorID, feedback.ID))
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"feedback": feedback}, headers)
+	err = a.writeJSON(w, http.StatusCreated, envelope{"feedback": feedback}, headers)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) createCourseFeedbackHandler(w http.ResponseWriter, r *http.Request) {
-	_, err := app.readIDParam(r)
+func (a *application) createCourseFeedbackHandler(w http.ResponseWriter, r *http.Request) {
+	_, err := a.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(w, r)
+		a.notFoundResponse(w, r)
 		return
 	}
 
@@ -161,9 +161,9 @@ func (app *application) createCourseFeedbackHandler(w http.ResponseWriter, r *ht
 		Comment             string `json:"comment"`
 	}
 
-	err = app.readJSON(w, r, &input)
+	err = a.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		a.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -173,51 +173,51 @@ func (app *application) createCourseFeedbackHandler(w http.ResponseWriter, r *ht
 		Comment:             input.Comment,
 	}
 
-	err = app.models.Feedback.InsertCourseFeedback(feedback)
+	err = a.models.Feedback.InsertCourseFeedback(feedback)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 		return
 	}
 
 	headers := make(http.Header)
 	headers.Set("Location", fmt.Sprintf("/v1/courses/%d/feedback/%d", feedback.CourseID, feedback.ID))
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"feedback": feedback}, headers)
+	err = a.writeJSON(w, http.StatusCreated, envelope{"feedback": feedback}, headers)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) listCourseFeedbackHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
+func (a *application) listCourseFeedbackHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(w, r)
+		a.notFoundResponse(w, r)
 		return
 	}
 
-	course, err := app.models.Courses.GetCourse(id)
+	course, err := a.models.Courses.GetCourse(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			a.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			a.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 	if course == nil {
-		app.notFoundResponse(w, r)
+		a.notFoundResponse(w, r)
 		return
 	}
 
-	feedback, err := app.models.Feedback.GetAllForCourse(id)
+	feedback, err := a.models.Feedback.GetAllForCourse(id)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"feedback": feedback}, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"feedback": feedback}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 	}
 }

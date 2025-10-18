@@ -295,32 +295,32 @@ func (a *application) listCoursesHandler(w http.ResponseWriter, r *http.Request)
 }
 
 // showCourseHandler returns a single course by ID
-func (app *application) showCourseHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (a *application) showCourseHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
 	if err != nil || id < 1 {
-		app.badRequestResponse(w, r, errors.New("invalid course ID"))
+		a.badRequestResponse(w, r, errors.New("invalid course ID"))
 		return
 	}
 
-	course, err := app.models.Courses.GetCourse(id)
+	course, err := a.models.Courses.GetCourse(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			a.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			a.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"course": course}, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"course": course}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 	}
 }
 
 // createCourseHandler creates a new course
-func (app *application) createCourseHandler(w http.ResponseWriter, r *http.Request) {
+func (a *application) createCourseHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title       string  `json:"title"`
 		Description string  `json:"description"`
@@ -328,9 +328,9 @@ func (app *application) createCourseHandler(w http.ResponseWriter, r *http.Reque
 		CreditHours float64 `json:"credit_hours"`
 	}
 
-	err := app.readJSON(w, r, &input)
+	err := a.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		a.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -343,40 +343,40 @@ func (app *application) createCourseHandler(w http.ResponseWriter, r *http.Reque
 
 	v := validator.New()
 	if data.ValidateCourse(v, course); !v.IsEmpty() {
-		app.failedValidationResponse(w, r, v.Errors)
+		a.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = app.models.Courses.CreateCourse(course)
+	err = a.models.Courses.CreateCourse(course)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 		return
 	}
 
 	headers := make(http.Header)
 	headers.Set("Location", "/v1/courses/"+strconv.FormatInt(course.ID, 10))
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"course": course}, headers)
+	err = a.writeJSON(w, http.StatusCreated, envelope{"course": course}, headers)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 	}
 }
 
 // updateCourseHandler updates an existing course
-func (app *application) updateCourseHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (a *application) updateCourseHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
 	if err != nil || id < 1 {
-		app.badRequestResponse(w, r, errors.New("invalid course ID"))
+		a.badRequestResponse(w, r, errors.New("invalid course ID"))
 		return
 	}
 
-	course, err := app.models.Courses.GetCourse(id)
+	course, err := a.models.Courses.GetCourse(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			a.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			a.serverErrorResponse(w, r, err)
 		}
 		return
 	}
@@ -388,9 +388,9 @@ func (app *application) updateCourseHandler(w http.ResponseWriter, r *http.Reque
 		CreditHours *float64 `json:"credit_hours"`
 	}
 
-	err = app.readJSON(w, r, &input)
+	err = a.readJSON(w, r, &input)
 	if err != nil {
-		app.badRequestResponse(w, r, err)
+		a.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -410,48 +410,48 @@ func (app *application) updateCourseHandler(w http.ResponseWriter, r *http.Reque
 
 	v := validator.New()
 	if data.ValidateCourse(v, course); !v.IsEmpty() {
-		app.failedValidationResponse(w, r, v.Errors)
+		a.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
-	err = app.models.Courses.UpdateCourse(course)
+	err = a.models.Courses.UpdateCourse(course)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			a.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			a.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"course": course}, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"course": course}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 	}
 }
 
 // deleteCourseHandler deletes a course
-func (app *application) deleteCourseHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (a *application) deleteCourseHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
 	if err != nil || id < 1 {
-		app.badRequestResponse(w, r, errors.New("invalid course ID"))
+		a.badRequestResponse(w, r, errors.New("invalid course ID"))
 		return
 	}
 
-	err = app.models.Courses.DeleteCourse(id)
+	err = a.models.Courses.DeleteCourse(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			a.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			a.serverErrorResponse(w, r, err)
 		}
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"message": "course successfully deleted"}, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"message": "course successfully deleted"}, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 	}
 }

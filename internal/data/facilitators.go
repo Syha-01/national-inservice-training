@@ -109,26 +109,29 @@ func (m FacilitatorModel) Create(facilitator *Facilitator) error {
 }
 
 // GetAll returns a slice of all facilitators.
-func (m FacilitatorModel) GetAll() ([]*Facilitator, error) {
+func (m FacilitatorModel) GetAll(filters Filters) ([]*Facilitator, Metadata, error) {
 	query := `
-		SELECT id, first_name, last_name, email, personnel_id
+		SELECT COUNT(*) OVER(), id, first_name, last_name, email, personnel_id
 		FROM facilitators
-		ORDER BY id`
+		ORDER BY id
+		LIMIT $1 OFFSET $2`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query)
+	rows, err := m.DB.QueryContext(ctx, query, filters.limit(), filters.offset())
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 	defer rows.Close()
 
+	totalRecords := 0
 	facilitators := []*Facilitator{}
 
 	for rows.Next() {
 		var facilitator Facilitator
 		err := rows.Scan(
+			&totalRecords,
 			&facilitator.ID,
 			&facilitator.FirstName,
 			&facilitator.LastName,
@@ -136,16 +139,18 @@ func (m FacilitatorModel) GetAll() ([]*Facilitator, error) {
 			(*sql.NullInt64)(&facilitator.PersonnelID),
 		)
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 		facilitators = append(facilitators, &facilitator)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return facilitators, nil
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return facilitators, metadata, nil
 }
 
 // Delete deletes a specific facilitator.

@@ -56,32 +56,49 @@ func (a *application) createFacilitatorHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (a *application) listFacilitatorsHandler(w http.ResponseWriter, r *http.Request) {
-	facilitators, err := a.models.Facilitators.GetAll()
+	var input struct {
+		data.Filters
+	}
+
+	v := validator.New()
+	qs := r.URL.Query()
+
+	input.Filters.Page = a.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = a.readInt(qs, "page_size", 20, v)
+
+	data.ValidateFilters(v, input.Filters)
+
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	facilitators, metadata, err := a.models.Facilitators.GetAll(input.Filters)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = a.writeJSON(w, http.StatusOK, envelope{"facilitators": facilitators}, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"facilitators": facilitators, "metadata": metadata}, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) showFacilitatorHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
+func (a *application) showFacilitatorHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
 	if err != nil {
-		app.notFoundResponse(w, r)
+		a.notFoundResponse(w, r)
 		return
 	}
 
-	facilitator, err := app.models.Facilitators.Get(id)
+	facilitator, err := a.models.Facilitators.Get(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
-			app.notFoundResponse(w, r)
+			a.notFoundResponse(w, r)
 		default:
-			app.serverErrorResponse(w, r, err)
+			a.serverErrorResponse(w, r, err)
 		}
 		return
 	}
@@ -90,9 +107,9 @@ func (app *application) showFacilitatorHandler(w http.ResponseWriter, r *http.Re
 		"facilitator": facilitator,
 	}
 
-	err = app.writeJSON(w, http.StatusOK, data, nil)
+	err = a.writeJSON(w, http.StatusOK, data, nil)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		a.serverErrorResponse(w, r, err)
 		return
 	}
 }
