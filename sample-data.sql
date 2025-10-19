@@ -131,6 +131,30 @@ INSERT INTO facilitator_ratings (session_enrollment_id, facilitator_id, score, c
     ((SELECT id FROM session_enrollment WHERE personnel_id = (SELECT id FROM personnel WHERE regulation_number = '202') AND session_id = (SELECT id FROM training_sessions WHERE start_date = '2025-11-10')),
     (SELECT id FROM facilitators WHERE email = 'acrane.consulting@gmail.com'), 5, 'Dr. Crane provided fantastic insight into the legal aspects. Very clear communicator.');
 
+
+-- ===================================================================
+-- Purpose: To add more facilitators who are also existing officers
+--          in the personnel table.
+-- ===================================================================
+
+-- Add Sergeant John Doe ('303') as a facilitator.
+INSERT INTO facilitators (first_name, last_name, email, personnel_id)
+VALUES (
+    'John',
+    'Doe',
+    'jdoe@police.bz',
+    (SELECT id FROM personnel WHERE regulation_number = '303')
+);
+
+-- Add Constable Jane Smith ('202') as a facilitator.
+INSERT INTO facilitators (first_name, last_name, email, personnel_id)
+VALUES (
+    'Jane',
+    'Smith',
+    'jsmith@police.bz',
+    (SELECT id FROM personnel WHERE regulation_number = '202')
+);
+
 -- ===================================================================
 --                  END OF TEST DATA SCRIPT
 -- ===================================================================
