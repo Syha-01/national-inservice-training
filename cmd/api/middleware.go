@@ -2,7 +2,12 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
+	"sync"
+	"time"
+
+	"golang.org/x/time/rate"
 )
 
 // recoverPanic middleware recovers from panics and returns a 500 error
@@ -66,11 +71,58 @@ func (a *application) enableCORS(next http.Handler) http.Handler {
 	})
 }
 
-// rateLimit middleware (placeholder - implement based on your requirements)
 func (a *application) rateLimit(next http.Handler) http.Handler {
+	// Define a client struct to hold the rate limiter and last seen time for each client.
+	type client struct {
+		limiter  *rate.Limiter
+		lastSeen time.Time
+	}
+
+	var (
+		mu      sync.Mutex
+		clients = make(map[string]*client)
+	)
+
+	// background goroutine to remove old entries from the clients map.
+	go func() {
+		for {
+			time.Sleep(time.Minute)
+			mu.Lock()
+			for ip, client := range clients {
+				if time.Since(client.lastSeen) > 3*time.Minute {
+					delete(clients, ip)
+				}
+			}
+			mu.Unlock()
+		}
+	}()
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Implement rate limiting logic using golang.org/x/time/rate
-		// For now, just pass through
+
+		if a.config.limiter.enabled {
+			ip, _, err := net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				a.serverErrorResponse(w, r, err)
+				return
+			}
+
+			mu.Lock()
+
+			if _, found := clients[ip]; !found {
+				clients[ip] = &client{limiter: rate.NewLimiter(rate.Limit(a.config.limiter.rps), a.config.limiter.burst)}
+			}
+
+			clients[ip].lastSeen = time.Now()
+
+			if !clients[ip].limiter.Allow() {
+				mu.Unlock()
+				a.rateLimitExceededResponse(w, r)
+				return
+			}
+
+			mu.Unlock()
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }

@@ -68,5 +68,5 @@ func (app *application) routes() http.Handler {
 	// 2. enableCORS - adds CORS headers and handles preflight
 	// 3. rateLimit - limits request rate (add when implemented)
 	// 4. authenticate - checks authentication (add when implemented)
-	return app.recoverPanic(app.enableCORS(router))
+	return app.recoverPanic(app.rateLimit(app.enableCORS(router)))
 }

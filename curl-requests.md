@@ -433,3 +433,27 @@ The response for a paginated request will include a `metadata` object with the f
 - `first_page`: The first page number.
 - `last_page`: The last page number.
 - `total_records`: The total number of records available.
+
+## Rate Limiting
+
+### Test the rate limiter
+
+This command will send 8 requests to the healthcheck endpoint. If the rate limiter is enabled with the default settings (burst of 5, 2 requests per second), the first 5 requests should succeed and the next 3 should be rejected with a `429 Too Many Requests` status.
+
+```bash
+for i in {1..8}; do curl -i localhost:4000/v1/healthcheck; done
+```
+
+### Test with the rate limiter disabled
+
+To test with the rate limiter disabled, you need to start the server with the `-limiter-enabled=false` flag.
+
+```bash
+go run ./cmd/api -limiter-enabled=false
+```
+
+Then, run the same curl command. All 8 requests should succeed.
+
+```bash
+for i in {1..8}; do curl -i localhost:4000/v1/healthcheck; done
+```
