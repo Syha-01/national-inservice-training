@@ -22,7 +22,7 @@ confirm:
 .PHONY: run/api
 run/api:
 	@echo '--Running application (development mode)'
-	@go run ./cmd/api -port=4000 -env=development
+	@go run ./cmd/api -port=4000 -env=development -limiter-burst=5 -limiter-rps=2 -limiter-enabled=true
 
 ## run/api/prod: run the cmd/api application (production mode - restricted CORS)
 .PHONY: run/api/prod
