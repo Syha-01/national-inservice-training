@@ -57,6 +57,42 @@ func (m FacilitatorModel) Get(id int64) (*Facilitator, error) {
 	return &facilitator, nil
 }
 
+// GetByPersonnelID retrieves a specific facilitator by personnel ID.
+func (m FacilitatorModel) GetByPersonnelID(id int64) (*Facilitator, error) {
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+
+	query := `
+		SELECT id, first_name, last_name, email, personnel_id
+		FROM facilitators
+		WHERE personnel_id = $1`
+
+	var facilitator Facilitator
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&facilitator.ID,
+		&facilitator.FirstName,
+		&facilitator.LastName,
+		&facilitator.Email,
+		(*sql.NullInt64)(&facilitator.PersonnelID),
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &facilitator, nil
+}
+
 // Update updates a specific facilitator.
 func (m FacilitatorModel) Update(facilitator *Facilitator) error {
 	query := `

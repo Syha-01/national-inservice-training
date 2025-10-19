@@ -36,6 +36,13 @@ func (a *application) createFacilitatorHandler(w http.ResponseWriter, r *http.Re
 			a.failedValidationResponse(w, r, v.Errors)
 			return
 		}
+
+		if _, err := a.models.Facilitators.GetByPersonnelID(*input.PersonnelID); err == nil {
+			v.AddError("personnel_id", "a facilitator with this personnel_id already exists")
+			a.failedValidationResponse(w, r, v.Errors)
+			return
+		}
+
 		facilitator.PersonnelID.Int64 = *input.PersonnelID
 		facilitator.PersonnelID.Valid = true
 	}
