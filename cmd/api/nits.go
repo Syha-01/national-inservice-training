@@ -198,7 +198,16 @@ func (a *application) listNitsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = a.writeJSON(w, http.StatusOK, envelope{"nits": nits, "metadata": metadata}, nil)
+	// Create a new struct for the response
+	data := struct {
+		Metadata data.Metadata `json:"metadata"`
+		Nits     []*data.Nit   `json:"nits"`
+	}{
+		Metadata: metadata,
+		Nits:     nits,
+	}
+
+	err = a.writeJSON(w, http.StatusOK, data, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
@@ -416,7 +425,16 @@ func (a *application) listOfficersHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = a.writeJSON(w, http.StatusOK, envelope{"officers": officers, "metadata": metadata}, nil)
+	// Create a new struct for the response
+	data := struct {
+		Metadata data.Metadata   `json:"metadata"`
+		Officers []*data.Officer `json:"officers"`
+	}{
+		Metadata: metadata,
+		Officers: officers,
+	}
+
+	err = a.writeJSON(w, http.StatusOK, data, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
@@ -447,7 +465,16 @@ func (a *application) listCoursesHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = a.writeJSON(w, http.StatusOK, envelope{"courses": courses, "metadata": metadata}, nil)
+	// Create a new struct for the response
+	data := struct {
+		Metadata data.Metadata  `json:"metadata"`
+		Courses  []*data.Course `json:"courses"`
+	}{
+		Metadata: metadata,
+		Courses:  courses,
+	}
+
+	err = a.writeJSON(w, http.StatusOK, data, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
@@ -455,11 +482,11 @@ func (a *application) listCoursesHandler(w http.ResponseWriter, r *http.Request)
 
 // showCourseHandler returns a single course by ID
 func (a *application) showCourseHandler(w http.ResponseWriter, r *http.Request) {
-    id, err := a.readIDParam(r)
-    if err != nil {
-        a.notFoundResponse(w, r)
-        return
-    }
+	id, err := a.readIDParam(r)
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
 
 	course, err := a.models.Courses.GetCourse(id)
 	if err != nil {
@@ -523,7 +550,7 @@ func (a *application) createCourseHandler(w http.ResponseWriter, r *http.Request
 
 // updateCourseHandler updates an existing course
 func (a *application) updateCourseHandler(w http.ResponseWriter, r *http.Request) {
-    id, err := a.readIDParam(r)
+	id, err := a.readIDParam(r)
 	if err != nil || id < 1 {
 		a.badRequestResponse(w, r, errors.New("invalid course ID"))
 		return
@@ -592,7 +619,7 @@ func (a *application) updateCourseHandler(w http.ResponseWriter, r *http.Request
 
 // deleteCourseHandler deletes a course
 func (a *application) deleteCourseHandler(w http.ResponseWriter, r *http.Request) {
-    id, err := a.readIDParam(r)
+	id, err := a.readIDParam(r)
 	if err != nil || id < 1 {
 		a.badRequestResponse(w, r, errors.New("invalid course ID"))
 		return
