@@ -7,9 +7,11 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Syha-01/national-inservice-training/internal/data"
+	"github.com/Syha-01/national-inservice-training/internal/mailer"
 	_ "github.com/lib/pq"
 )
 
@@ -29,12 +31,21 @@ type configuration struct {
 		burst   int
 		enabled bool
 	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 type application struct {
 	config configuration
 	logger *slog.Logger
 	models data.Models
+	mailer mailer.Mailer
+	wg     sync.WaitGroup
 }
 
 func main() {
@@ -59,6 +70,13 @@ func main() {
 	flag.IntVar(&settings.limiter.burst, "limiter-burst", 5, "Rate limiter maximum burst")
 	flag.BoolVar(&settings.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 
+	// SMTP configuration
+	flag.StringVar(&settings.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&settings.smtp.port, "smtp-port", 2525, "SMTP port")
+	flag.StringVar(&settings.smtp.username, "smtp-username", "249f70e4cc4329", "SMTP username")
+	flag.StringVar(&settings.smtp.password, "smtp-password", "2fa704cb93fea2", "SMTP password")
+	flag.StringVar(&settings.smtp.sender, "smtp-sender", "National Inservice Training <no-reply@nits.com>", "SMTP sender")
+
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -76,6 +94,7 @@ func main() {
 		config: settings,
 		logger: logger,
 		models: data.NewModels(db),
+		mailer: mailer.New(settings.smtp.host, settings.smtp.port, settings.smtp.username, settings.smtp.password, settings.smtp.sender),
 	}
 
 	err = appInstance.serve()

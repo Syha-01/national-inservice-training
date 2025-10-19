@@ -86,16 +86,7 @@ func (a *application) listFacilitatorsHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Create a new struct for the response
-	data := struct {
-		Metadata     data.Metadata       `json:"metadata"`
-		Facilitators []*data.Facilitator `json:"facilitators"`
-	}{
-		Metadata:     metadata,
-		Facilitators: facilitators,
-	}
-
-	err = a.writeJSON(w, http.StatusOK, data, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"facilitators": facilitators, "metadata": metadata}, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
@@ -303,16 +294,7 @@ func (a *application) listFacilitatorsForSessionHandler(w http.ResponseWriter, r
 		return
 	}
 
-	// Create a new struct for the response
-	data := struct {
-		Metadata     data.Metadata       `json:"metadata"`
-		Facilitators []*data.Facilitator `json:"facilitators"`
-	}{
-		Metadata:     metadata,
-		Facilitators: facilitators,
-	}
-
-	err = a.writeJSON(w, http.StatusOK, data, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"facilitators": facilitators, "metadata": metadata}, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}

@@ -78,23 +78,18 @@ func (a *application) registerUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Send welcome email in background (if you have mailer set up)
-	// a.background(func() {
-	// 	data := map[string]any{
-	// 		"activationToken": token.Plaintext,
-	// 		"userID":          user.ID,
-	// 	}
-	// 	err = a.mailer.Send(user.Email, "user_welcome.tmpl", data)
-	// 	if err != nil {
-	// 		a.logger.Error(err.Error())
-	// 	}
-	// })
+	a.background(func() {
+		data := map[string]any{
+			"activationToken": token.Plaintext,
+			"userID":          user.ID,
+		}
+		err = a.mailer.Send(user.Email, "user_welcome.tmpl", data)
+		if err != nil {
+			a.logger.Error(err.Error())
+		}
+	})
 
-	// For now, return the activation token in the response (in production, send via email)
-	err = a.writeJSON(w, http.StatusCreated, envelope{
-		"user":             user,
-		"activation_token": token.Plaintext,
-	}, nil)
+	err = a.writeJSON(w, http.StatusCreated, envelope{"user": user}, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}

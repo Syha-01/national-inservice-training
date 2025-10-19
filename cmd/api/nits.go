@@ -198,16 +198,7 @@ func (a *application) listNitsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create a new struct for the response
-	data := struct {
-		Metadata data.Metadata `json:"metadata"`
-		Nits     []*data.Nit   `json:"nits"`
-	}{
-		Metadata: metadata,
-		Nits:     nits,
-	}
-
-	err = a.writeJSON(w, http.StatusOK, data, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"nits": nits, "metadata": metadata}, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
@@ -425,16 +416,7 @@ func (a *application) listOfficersHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Create a new struct for the response
-	data := struct {
-		Metadata data.Metadata   `json:"metadata"`
-		Officers []*data.Officer `json:"officers"`
-	}{
-		Metadata: metadata,
-		Officers: officers,
-	}
-
-	err = a.writeJSON(w, http.StatusOK, data, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"officers": officers, "metadata": metadata}, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}
@@ -465,16 +447,7 @@ func (a *application) listCoursesHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Create a new struct for the response
-	data := struct {
-		Metadata data.Metadata  `json:"metadata"`
-		Courses  []*data.Course `json:"courses"`
-	}{
-		Metadata: metadata,
-		Courses:  courses,
-	}
-
-	err = a.writeJSON(w, http.StatusOK, data, nil)
+	err = a.writeJSON(w, http.StatusOK, envelope{"courses": courses, "metadata": metadata}, nil)
 	if err != nil {
 		a.serverErrorResponse(w, r, err)
 	}

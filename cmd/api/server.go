@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,14 +13,23 @@ import (
 	"time"
 )
 
+type slogAdapter struct {
+	logger *slog.Logger
+}
+
+func (h slogAdapter) Write(p []byte) (n int, err error) {
+	h.logger.Error(string(p))
+	return len(p), nil
+}
+
 func (a *application) serve() error {
-	apiServer := &http.Server{
+	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", a.config.port),
 		Handler:      a.routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		ErrorLog:     slog.NewLogLogger(a.logger.Handler(), slog.LevelError),
+		ErrorLog:     log.New(slogAdapter{logger: a.logger}, "", 0),
 	}
 
 	shutdownError := make(chan error)
@@ -34,13 +44,19 @@ func (a *application) serve() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		shutdownError <- apiServer.Shutdown(ctx)
+		err := srv.Shutdown(ctx)
+		if err != nil {
+			shutdownError <- err
+		}
+
+		a.logger.Info("completing background tasks", "addr", srv.Addr)
+		a.wg.Wait()
+		shutdownError <- nil
 	}()
 
-	a.logger.Info("starting server", "address", apiServer.Addr,
-		"environment", a.config.env)
+	a.logger.Info("starting server", "addr", srv.Addr, "env", a.config.env)
 
-	err := apiServer.ListenAndServe()
+	err := srv.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
@@ -50,7 +66,7 @@ func (a *application) serve() error {
 		return err
 	}
 
-	a.logger.Info("stopped server", "address", apiServer.Addr)
+	a.logger.Info("stopped server", "addr", srv.Addr)
 
 	return nil
 }
