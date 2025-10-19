@@ -42,13 +42,13 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/facilitators/:id/feedback", app.createFacilitatorFeedbackHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/facilitators/:id/feedback", app.listFacilitatorFeedbackHandler)
 
-	// COURSES ROUTES
-	router.HandlerFunc(http.MethodGet, "/v1/courses", app.listCoursesHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/courses", app.createCourseHandler)
-	router.Handle(http.MethodGet, "/v1/courses/:id", httprouter.Handle(app.showCourseHandler))
-	router.Handle(http.MethodPatch, "/v1/courses/:id", httprouter.Handle(app.updateCourseHandler))
-	router.Handle(http.MethodDelete, "/v1/courses/:id", httprouter.Handle(app.deleteCourseHandler))
 
+// COURSES ROUTES
+router.HandlerFunc(http.MethodGet, "/v1/courses", app.listCoursesHandler)
+router.HandlerFunc(http.MethodPost, "/v1/courses", app.createCourseHandler)
+router.HandlerFunc(http.MethodGet, "/v1/courses/:id", app.showCourseHandler)
+router.HandlerFunc(http.MethodPatch, "/v1/courses/:id", app.updateCourseHandler)
+router.HandlerFunc(http.MethodDelete, "/v1/courses/:id", app.deleteCourseHandler)
 	// Course feedback routes
 	router.HandlerFunc(http.MethodPost, "/v1/courses/:id/feedback", app.createCourseFeedbackHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/courses/:id/feedback", app.listCourseFeedbackHandler)
@@ -70,6 +70,12 @@ func (app *application) routes() http.Handler {
 
 	// router.HandlerFunc(http.MethodGet, "/v1/trainings", app.listTrainingsHandler)
 	// router.HandlerFunc(http.MethodPost, "/v1/trainings", app.createTrainingHandler)
+	
+
+	// User authentication routes (public)
+	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationTokenHandler)
 
 	//Middleware chain
 	// 1. recoverPanic - catches any panics and returns 500

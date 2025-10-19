@@ -9,7 +9,6 @@ import (
 
 	"github.com/Syha-01/national-inservice-training/internal/data"
 	"github.com/Syha-01/national-inservice-training/internal/validator"
-	"github.com/julienschmidt/httprouter"
 )
 
 func (a *application) createNitHandler(w http.ResponseWriter, r *http.Request) {
@@ -455,12 +454,12 @@ func (a *application) listCoursesHandler(w http.ResponseWriter, r *http.Request)
 }
 
 // showCourseHandler returns a single course by ID
-func (a *application) showCourseHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
-	if err != nil || id < 1 {
-		a.badRequestResponse(w, r, errors.New("invalid course ID"))
-		return
-	}
+func (a *application) showCourseHandler(w http.ResponseWriter, r *http.Request) {
+    id, err := a.readIDParam(r)
+    if err != nil {
+        a.notFoundResponse(w, r)
+        return
+    }
 
 	course, err := a.models.Courses.GetCourse(id)
 	if err != nil {
@@ -523,8 +522,8 @@ func (a *application) createCourseHandler(w http.ResponseWriter, r *http.Request
 }
 
 // updateCourseHandler updates an existing course
-func (a *application) updateCourseHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
+func (a *application) updateCourseHandler(w http.ResponseWriter, r *http.Request) {
+    id, err := a.readIDParam(r)
 	if err != nil || id < 1 {
 		a.badRequestResponse(w, r, errors.New("invalid course ID"))
 		return
@@ -592,8 +591,8 @@ func (a *application) updateCourseHandler(w http.ResponseWriter, r *http.Request
 }
 
 // deleteCourseHandler deletes a course
-func (a *application) deleteCourseHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
+func (a *application) deleteCourseHandler(w http.ResponseWriter, r *http.Request) {
+    id, err := a.readIDParam(r)
 	if err != nil || id < 1 {
 		a.badRequestResponse(w, r, errors.New("invalid course ID"))
 		return

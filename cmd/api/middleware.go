@@ -1,13 +1,18 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
+
+	"github.com/Syha-01/national-inservice-training/internal/data"
+	"github.com/Syha-01/national-inservice-training/internal/validator"
 )
 
 // recoverPanic middleware recovers from panics and returns a 500 error
@@ -127,30 +132,107 @@ func (a *application) rateLimit(next http.Handler) http.Handler {
 	})
 }
 
-// authenticate middleware (placeholder - implement based on your requirements)
+// authenticate extracts and validates the authentication token
 func (a *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Implement JWT or session-based authentication
-		// Extract and validate token from Authorization header
-		// For now, just pass through
+		// Add "Vary: Authorization" header to indicate that response may vary
+		w.Header().Add("Vary", "Authorization")
+
+		// Retrieve Authorization header
+		authorizationHeader := r.Header.Get("Authorization")
+
+		// If no Authorization header, set anonymous user and continue
+		if authorizationHeader == "" {
+			r = a.contextSetUser(r, data.AnonymousUser)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Parse the Authorization header (expecting "Bearer TOKEN")
+		headerParts := strings.Split(authorizationHeader, " ")
+		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+			a.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		token := headerParts[1]
+
+		// Validate token format
+		v := validator.New()
+		if data.ValidateTokenPlaintext(v, token); !v.IsEmpty() {
+			a.invalidAuthenticationTokenResponse(w, r)
+			return
+		}
+
+		// Retrieve user associated with the token
+		user, err := a.models.Users.GetForToken(data.ScopeAuthentication, token)
+		if err != nil {
+			switch {
+			case errors.Is(err, data.ErrRecordNotFound):
+				a.invalidAuthenticationTokenResponse(w, r)
+			default:
+				a.serverErrorResponse(w, r, err)
+			}
+			return
+		}
+
+		// Add user to request context
+		r = a.contextSetUser(r, user)
+
 		next.ServeHTTP(w, r)
 	})
 }
 
 // requireAuthenticatedUser ensures user is authenticated
 func (a *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Check if user is authenticated
-		// If not, return 401 Unauthorized
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := a.contextGetUser(r)
+
+		if user.IsAnonymous() {
+			a.authenticationRequiredResponse(w, r)
+			return
+		}
+
 		next.ServeHTTP(w, r)
-	}
+	})
 }
 
-// requirePermission checks if user has specific permission
-func (a *application) requirePermission(permission string, next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Check user permissions based on role
-		// Administrator, Content Contributor, or System User
+// requireActivatedUser ensures user account is activated
+func (a *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := a.contextGetUser(r)
+
+		if !user.Activated {
+			a.inactiveAccountResponse(w, r)
+			return
+		}
+
 		next.ServeHTTP(w, r)
-	}
+	})
+
+	return a.requireAuthenticatedUser(fn)
+}
+
+// requirePermission checks if user has specific permission based on their role
+func (a *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := a.contextGetUser(r)
+
+		// Get permissions for the user based on their role
+		permissions, err := a.models.Permissions.GetAllForUser(user.ID)
+		if err != nil {
+			a.serverErrorResponse(w, r, err)
+			return
+		}
+
+		// Check if the user has the required permission
+		if !permissions.Include(code) {
+			a.notPermittedResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+
+	return a.requireActivatedUser(fn)
 }

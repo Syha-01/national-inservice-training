@@ -10,8 +10,9 @@ type Models struct {
 	Facilitators FacilitatorModel
 	Feedback     FeedbackModel
 	Nits         NitModel
-	// Users        UserModel
-	// Tokens       TokenModel
+	Users        UserModel
+	Tokens       TokenModel
+	Permissions PermissionModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -21,7 +22,8 @@ func NewModels(db *sql.DB) Models {
 		Facilitators: FacilitatorModel{DB: db},
 		Feedback:     FeedbackModel{DB: db},
 		Nits:         NitModel{DB: db},
-		// Users:        UserModel{DB: db},
-		// Tokens:       TokenModel{DB: db},
+		Users:        UserModel{DB: db},
+		Tokens:       TokenModel{DB: db},
+		Permissions: PermissionModel{DB: db},
 	}
 }

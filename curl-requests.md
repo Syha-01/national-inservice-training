@@ -457,3 +457,32 @@ Then, run the same curl command. All 8 requests should succeed.
 ```bash
 for i in {1..8}; do curl -i localhost:4000/v1/healthcheck; done
 ```
+
+
+
+
+## Authentication
+
+## Register a user (Public Route)
+
+```bash
+curl -X POST http://localhost:4000/v1/users \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password123"}'
+```
+
+## Activate the User (Public Route)
+
+```bash
+curl -X PUT http://localhost:4000/v1/users/activated \
+  -H "Content-Type: application/json" \
+  -d '{"token": "YOUR_ACTIVATION_TOKEN"}'
+```
+
+## Get Authentication Token (Public Route)
+
+```bash
+curl -X POST http://localhost:4000/v1/tokens/authentication \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password123"}'
+```
