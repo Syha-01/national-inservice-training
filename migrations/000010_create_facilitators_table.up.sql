@@ -4,5 +4,6 @@ CREATE TABLE facilitators (
     last_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE,
     personnel_id INT UNIQUE,
+    version INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE SET NULL
 );

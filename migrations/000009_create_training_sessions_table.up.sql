@@ -6,5 +6,6 @@ CREATE TABLE training_sessions (
     location VARCHAR(255),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
+    version INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );

@@ -129,6 +129,135 @@ func (m NitModel) Get(id int64) (*Nit, error) {
 	return &nit, nil
 }
 
+// Update updates a specific training session.
+func (m NitModel) Update(nit *Nit) error {
+	query := `
+		UPDATE training_sessions
+		SET course_id = $1, start_date = $2, end_date = $3, location = $4, updated_at = NOW(), version = version + 1
+		WHERE id = $5 AND version = $6
+		RETURNING updated_at, version`
+
+	args := []any{
+		nit.CourseID,
+		nit.StartDate,
+		nit.EndDate,
+		nit.Location,
+		nit.ID,
+		nit.Version,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&nit.CreatedAt, &nit.Version)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+	return nil
+}
+
+// GetAll returns a slice of all training sessions.
+func (m NitModel) GetAll(filters Filters) ([]*Nit, Metadata, error) {
+	query := `
+		SELECT COUNT(*) OVER(), id, course_id, start_date, end_date, location, created_at, version
+		FROM training_sessions
+		ORDER BY id
+		LIMIT $1 OFFSET $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query, filters.limit(), filters.offset())
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+	defer rows.Close()
+
+	totalRecords := 0
+	nits := []*Nit{}
+
+	for rows.Next() {
+		var nit Nit
+		err := rows.Scan(
+			&totalRecords,
+			&nit.ID,
+			&nit.CourseID,
+			&nit.StartDate,
+			&nit.EndDate,
+			&nit.Location,
+			&nit.CreatedAt,
+			&nit.Version,
+		)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+		nits = append(nits, &nit)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return nits, metadata, nil
+}
+
+// Create creates a new training session.
+func (m NitModel) Create(nit *Nit) error {
+	query := `
+		INSERT INTO training_sessions (course_id, start_date, end_date, location)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, created_at, version`
+
+	args := []any{
+		nit.CourseID,
+		nit.StartDate,
+		nit.EndDate,
+		nit.Location,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&nit.ID, &nit.CreatedAt, &nit.Version)
+}
+
+// Delete deletes a specific training session.
+func (m NitModel) Delete(id int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+
+	query := `
+		DELETE FROM training_sessions
+		WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
 // GetOfficer retrieves a specific officer by ID.
 func (m OfficerModel) GetOfficer(id int64) (*Officer, error) {
 	// check if the id is valid

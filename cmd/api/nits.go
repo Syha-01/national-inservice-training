@@ -42,7 +42,167 @@ func (a *application) createNitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "%+v\n", nit)
+	err = a.models.Nits.Create(nit)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/nits/%d", nit.ID))
+
+	err = a.writeJSON(w, http.StatusCreated, envelope{"nit": nit}, headers)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
+
+func (a *application) showNitHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
+
+	nit, err := a.models.Nits.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			a.notFoundResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"nit": nit}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
+
+func (a *application) updateNitHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
+
+	nit, err := a.models.Nits.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			a.notFoundResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	var input struct {
+		CourseID  *int64     `json:"course_id"`
+		StartDate *time.Time `json:"start_date"`
+		EndDate   *time.Time `json:"end_date"`
+		Location  *string    `json:"location"`
+	}
+
+	err = a.readJSON(w, r, &input)
+	if err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	if input.CourseID != nil {
+		nit.CourseID = *input.CourseID
+	}
+	if input.StartDate != nil {
+		nit.StartDate = *input.StartDate
+	}
+	if input.EndDate != nil {
+		nit.EndDate = *input.EndDate
+	}
+	if input.Location != nil {
+		nit.Location = *input.Location
+	}
+
+	v := validator.New()
+
+	data.ValidateNit(v, nit)
+
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = a.models.Nits.Update(nit)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			a.editConflictResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"nit": nit}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
+
+func (a *application) deleteNitHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := a.readIDParam(r)
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
+
+	err = a.models.Nits.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			a.notFoundResponse(w, r)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"message": "nit successfully deleted"}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
+
+func (a *application) listNitsHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		data.Filters
+	}
+
+	v := validator.New()
+	qs := r.URL.Query()
+
+	input.Filters.Page = a.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = a.readInt(qs, "page_size", 20, v)
+
+	data.ValidateFilters(v, input.Filters)
+
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	nits, metadata, err := a.models.Nits.GetAll(input.Filters)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"nits": nits, "metadata": metadata}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
 }
 
 func (a *application) createOfficerHandler(w http.ResponseWriter, r *http.Request) {

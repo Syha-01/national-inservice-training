@@ -14,7 +14,14 @@ func (app *application) routes() http.Handler {
 
 	// setup routes
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
+
+	// nit routes
 	router.HandlerFunc(http.MethodPost, "/v1/nits", app.createNitHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/nits/:id", app.showNitHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/nits/:id", app.updateNitHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/nits/:id", app.deleteNitHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/nits", app.listNitsHandler)
+
 	router.HandlerFunc(http.MethodPost, "/v1/officers", app.createOfficerHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/officers/:id", app.displayOfficerHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/officers/:id", app.updateOfficerHandler)
@@ -28,6 +35,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/facilitators/:id", app.updateFacilitatorHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/facilitators/:id", app.deleteFacilitatorHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/sessions/:id/facilitators", app.assignFacilitatorToSessionHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/sessions/:id/facilitators", app.listFacilitatorsForSessionHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/sessions/:id/facilitators/:facilitator_id", app.removeFacilitatorFromSessionHandler)
 
 	// Facilitator feedback routes

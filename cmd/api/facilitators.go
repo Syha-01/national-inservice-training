@@ -264,6 +264,42 @@ func (a *application) assignFacilitatorToSessionHandler(w http.ResponseWriter, r
 	}
 }
 
+func (a *application) listFacilitatorsForSessionHandler(w http.ResponseWriter, r *http.Request) {
+	sessionID, err := a.readIDParam(r)
+	if err != nil {
+		a.notFoundResponse(w, r)
+		return
+	}
+
+	var input struct {
+		data.Filters
+	}
+
+	v := validator.New()
+	qs := r.URL.Query()
+
+	input.Filters.Page = a.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = a.readInt(qs, "page_size", 20, v)
+
+	data.ValidateFilters(v, input.Filters)
+
+	if !v.IsEmpty() {
+		a.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	facilitators, metadata, err := a.models.Facilitators.GetAllForSession(sessionID, input.Filters)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusOK, envelope{"facilitators": facilitators, "metadata": metadata}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
+
 func (a *application) removeFacilitatorFromSessionHandler(w http.ResponseWriter, r *http.Request) {
 	sessionID, err := a.readIDParam(r)
 	if err != nil {
