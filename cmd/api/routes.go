@@ -42,13 +42,12 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/v1/facilitators/:id/feedback", app.createFacilitatorFeedbackHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/facilitators/:id/feedback", app.listFacilitatorFeedbackHandler)
 
-
-// COURSES ROUTES
-router.HandlerFunc(http.MethodGet, "/v1/courses", app.listCoursesHandler)
-router.HandlerFunc(http.MethodPost, "/v1/courses", app.createCourseHandler)
-router.HandlerFunc(http.MethodGet, "/v1/courses/:id", app.showCourseHandler)
-router.HandlerFunc(http.MethodPatch, "/v1/courses/:id", app.updateCourseHandler)
-router.HandlerFunc(http.MethodDelete, "/v1/courses/:id", app.deleteCourseHandler)
+	// COURSES ROUTES
+	router.HandlerFunc(http.MethodGet, "/v1/courses", app.listCoursesHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/courses", app.createCourseHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/courses/:id", app.showCourseHandler)
+	router.HandlerFunc(http.MethodPatch, "/v1/courses/:id", app.updateCourseHandler)
+	router.HandlerFunc(http.MethodDelete, "/v1/courses/:id", app.deleteCourseHandler)
 	// Course feedback routes
 	router.HandlerFunc(http.MethodPost, "/v1/courses/:id/feedback", app.createCourseFeedbackHandler)
 	router.HandlerFunc(http.MethodGet, "/v1/courses/:id/feedback", app.listCourseFeedbackHandler)
@@ -70,7 +69,6 @@ router.HandlerFunc(http.MethodDelete, "/v1/courses/:id", app.deleteCourseHandler
 
 	// router.HandlerFunc(http.MethodGet, "/v1/trainings", app.listTrainingsHandler)
 	// router.HandlerFunc(http.MethodPost, "/v1/trainings", app.createTrainingHandler)
-	
 
 	// User authentication routes (public)
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
@@ -82,5 +80,5 @@ router.HandlerFunc(http.MethodDelete, "/v1/courses/:id", app.deleteCourseHandler
 	// 2. enableCORS - adds CORS headers and handles preflight
 	// 3. rateLimit - limits request rate (add when implemented)
 	// 4. authenticate - checks authentication (add when implemented)
-	return app.recoverPanic(app.rateLimit(app.enableCORS(router)))
+	return app.recoverPanic(app.rateLimit(app.authenticate(app.enableCORS(router))))
 }
