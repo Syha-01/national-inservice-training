@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/Syha-01/national-inservice-training/internal/validator"
 	"github.com/lib/pq"
 )
 
@@ -69,4 +70,8 @@ WHERE permissions.code = ANY($2)
 	// slices need to be converted to arrays to work in PostgreSQL
 	_, err := p.DB.ExecContext(ctx, query, userID, pq.Array(codes))
 	return err
+}
+
+func ValidatePermissionCode(v *validator.Validator, code string) {
+	v.Check(code != "", "code", "must be provided")
 }

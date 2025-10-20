@@ -9,7 +9,7 @@ BODY='{"email":"testuser@example.com", "password":"password123"}'
 curl -i -d "$BODY" localhost:4000/v1/users
 ```
 
-From the response, you will need to copy the `token` value from the `user` object. This is the activation token.
+From the response, you will need to copy the `id` of the user and the `token` value from the `user` object. This is the activation token.
 
 ## 2. Activate the new user
 
@@ -47,19 +47,24 @@ BODY='{"title":"New NIT", "content":"This should not work."}'
 curl -i -d "$BODY" -H "Authorization: Bearer <AUTH_TOKEN>" localhost:4000/v1/nits
 ```
 
-## 6. (Optional) Give a user `nits:write` permission
+## 6. Give a user `nits:write` permission
 
-To test the `nits:write` permission, you will need to manually add the permission to a user in the database. You can do this with the following SQL commands:
+To give a user the `nits:write` permission, you will need to be authenticated as a user with the `admin:all` permission.
 
-```sql
--- First, find the user's ID
-SELECT id FROM users WHERE email = 'testuser@example.com';
+First, authenticate as an admin user (you may need to create one and assign the `admin:all` permission manually in the database if you don't have one).
 
--- Then, find the 'nits:write' permission's ID
-SELECT id FROM permissions WHERE code = 'nits:write';
-
--- Finally, insert a new record into the users_permissions table
-INSERT INTO users_permissions (user_id, permission_id) VALUES (<USER_ID>, <PERMISSION_ID>);
+```bash
+# Authenticate as admin
+ADMIN_BODY='{"email": "admin@example.com", "password": "adminpassword"}'
+ADMIN_TOKEN=$(curl -s -d "$ADMIN_BODY" localhost:4000/v1/tokens/authentication | jq -r .authentication_token.token)
 ```
 
-After running these commands, you can re-run the POST request from step 5, and it should succeed.
+Now, you can add the `nits:write` permission to the user you created in step 1. Replace `<USER_ID>` with the ID of the user.
+
+```bash
+USER_ID=<USER_ID>
+PERMISSION_BODY='{"code":"nits:write"}'
+curl -i -d "$PERMISSION_BODY" -H "Authorization: Bearer $ADMIN_TOKEN" localhost:4000/v1/users/$USER_ID/permissions
+```
+
+After running this command, you can re-run the POST request from step 5 (with the non-admin user's token), and it should succeed.

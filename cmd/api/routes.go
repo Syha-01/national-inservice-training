@@ -75,6 +75,9 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationTokenHandler)
 
+	// Permissions routes
+	router.HandlerFunc(http.MethodPost, "/v1/users/:id/permissions", app.requirePermission("admin:all", app.addUserPermissionHandler))
+
 	//Middleware chain
 	// 1. recoverPanic - catches any panics and returns 500
 	// 2. enableCORS - adds CORS headers and handles preflight
