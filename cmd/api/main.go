@@ -41,11 +41,12 @@ type configuration struct {
 }
 
 type application struct {
-	config configuration
-	logger *slog.Logger
-	models data.Models
-	mailer mailer.Mailer
-	wg     sync.WaitGroup
+	config          configuration
+	logger          *slog.Logger
+	models          data.Models
+	mailer          mailer.Mailer
+	wg              sync.WaitGroup
+	permissionModel data.PermissionModel
 }
 
 func main() {
@@ -91,10 +92,11 @@ func main() {
 	logger.Info("database connection pool established")
 
 	appInstance := &application{
-		config: settings,
-		logger: logger,
-		models: data.NewModels(db),
-		mailer: mailer.New(settings.smtp.host, settings.smtp.port, settings.smtp.username, settings.smtp.password, settings.smtp.sender),
+		config:          settings,
+		logger:          logger,
+		models:          data.NewModels(db),
+		mailer:          mailer.New(settings.smtp.host, settings.smtp.port, settings.smtp.username, settings.smtp.password, settings.smtp.sender),
+		permissionModel: data.PermissionModel{DB: db},
 	}
 
 	err = appInstance.serve()

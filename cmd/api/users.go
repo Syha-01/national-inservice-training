@@ -71,6 +71,12 @@ func (a *application) registerUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	err = a.models.Permissions.AddForUser(user.ID, "nits:read")
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
 	// Generate an activation token
 	token, err := a.models.Tokens.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
 	if err != nil {
