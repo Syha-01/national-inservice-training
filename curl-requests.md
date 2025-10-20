@@ -486,3 +486,87 @@ curl -X POST http://localhost:4000/v1/tokens/authentication \
   -H "Content-Type: application/json" \
   -d '{"email": "test@example.com", "password": "password123"}'
 ```
+
+Of course. Here are the `curl` commands you can use to test the authorization implementation.
+
+Please replace placeholder values like `YOUR_EMAIL`, `YOUR_PASSWORD`, and `YOUR_TOKEN` with actual values.
+
+### 1. Test with an Unactivated User
+
+First, register a new user. This user will be unactivated by default.
+
+```bash
+# Register a new user
+curl -i -X POST -H "Content-Type: application/json" \
+-d '{"name": "Unactivated User", "email": "unactivated@example.com", "password": "password123"}' \
+localhost:4000/v1/users
+```
+
+Now, attempt to create an authentication token for this unactivated user.
+
+```bash
+# Attempt to get an authentication token
+BODY='{"email": "unactivated@example.com", "password": "password123"}'
+curl -i -X POST -H "Content-Type: application/json" -d "$BODY" \
+localhost:4000/v1/tokens/authentication
+```
+
+If the login is successful and you receive a token, use it to try and access a protected endpoint. You should be blocked.
+
+```bash
+# Replace YOUR_UNACTIVATED_TOKEN with the token from the previous step
+curl -i -H "Authorization: Bearer YOUR_UNACTIVATED_TOKEN" \
+localhost:4000/v1/nits
+```
+
+__Expected Result:__ You should receive an `HTTP/1.1 403 Forbidden` status code with the message: `"your user account must be activated to access this resource"`.
+
+### 2. Test with an Anonymous User
+
+To test this, simply make a request to a protected endpoint without an `Authorization` header.
+
+```bash
+# Access a protected endpoint without a token
+curl -i localhost:4000/v1/nits
+```
+
+__Expected Result:__ You should receive an `HTTP/1.1 401 Unauthorized` status code with the message: `"you must be authenticated to access this resource"`.
+
+### 3. Test with an Activated User
+
+First, register a new user.
+
+```bash
+# Register a new user
+curl -i -X POST -H "Content-Type: application/json" \
+-d '{"name": "Activated User", "email": "activated@example.com", "password": "password123"}' \
+localhost:4000/v1/users
+```
+
+Next, you need to activate this user. In a real application, this would be done by clicking a link in an email. For testing, you will need to get the activation token directly from your database from the `tokens` table for the new user and then use it in the following command.
+
+```bash
+# Replace YOUR_ACTIVATION_TOKEN with the token from your database
+BODY='{"token": "YOUR_ACTIVATION_TOKEN"}'
+curl -i -X PUT -H "Content-Type: application/json" -d "$BODY" \
+localhost:4000/v1/users/activated
+```
+
+Once the user is activated, you can create an authentication token.
+
+```bash
+# Get an authentication token for the activated user
+BODY='{"email": "activated@example.com", "password": "password123"}'
+curl -i -X POST -H "Content-Type: application/json" -d "$BODY" \
+localhost:4000/v1/tokens/authentication
+```
+
+Finally, use the authentication token to access a protected endpoint.
+
+```bash
+# Replace YOUR_AUTHENTICATION_TOKEN with the token from the previous step
+curl -i -H "Authorization: Bearer YOUR_AUTHENTICATION_TOKEN" \
+localhost:4000/v1/nits
+```
+
+__Expected Result:__ You should receive an `HTTP/1.1 200 OK` status code and the list of nits in the response body.
