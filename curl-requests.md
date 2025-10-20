@@ -1,572 +1,65 @@
-# cURL Requests
+# Authorization Testing
 
-## Migrations
+## 1. Create a new user
 
-To run database migrations:
+This command will create a new user with the specified email and password. By default, new users are assigned the `nits:read` permission.
 
 ```bash
-migrate -path=./migrations -database="postgres://nits:bananaforscale@localhost/nits?sslmode=disable" up
+BODY='{"email":"testuser@example.com", "password":"password123"}'
+curl -i -d "$BODY" localhost:4000/v1/users
 ```
 
-## Database CLI
+From the response, you will need to copy the `token` value from the `user` object. This is the activation token.
 
-To log in to the PostgreSQL CLI:
+## 2. Activate the new user
 
-As the `postgres` user:
+Replace `<ACTIVATION_TOKEN>` with the token you copied from the previous step.
+
 ```bash
-sudo -u postgres psql
+curl -X PUT -d '{"token": "<ACTIVATION_TOKEN>"}' localhost:4000/v1/users/activated
 ```
 
-With a specific user and database:
+## 3. Authenticate as the new user
+
+This command will exchange the user's email and password for an authentication token.
+
 ```bash
-psql --host=localhost --dbname=nits --username=nits
+BODY='{"email": "testuser@example.com", "password": "password123"}'
+curl -i -d "$BODY" localhost:4000/v1/tokens/authentication
 ```
 
-## Healthcheck
+From the response, you will need to copy the `token` value from the `authentication_token` object.
 
-### Check the health of the API
+## 4. Test `nits:read` permission (should succeed)
+
+Replace `<AUTH_TOKEN>` with the authentication token you copied from the previous step. This request should succeed because the user has the `nits:read` permission.
 
 ```bash
-curl -i localhost:4000/v1/healthcheck
+curl -i -H "Authorization: Bearer <AUTH_TOKEN>" localhost:4000/v1/nits
 ```
 
-## Nits
+## 5. Test `nits:write` permission (should fail)
 
-### Create a new nit
-
-**Format:** `localhost:4000/v1/nits`
-
-**Important:** This request will fail if the `course_id` does not exist in the database.
+This request should fail with a `403 Forbidden` error because the user does not have the `nits:write` permission.
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{
-    "course_id": [course_id],
-    "start_date": "2025-01-01T00:00:00Z",
-    "end_date": "2025-01-02T00:00:00Z",
-    "location": "Belize City"
-}' localhost:4000/v1/nits
+BODY='{"title":"New NIT", "content":"This should not work."}'
+curl -i -d "$BODY" -H "Authorization: Bearer <AUTH_TOKEN>" localhost:4000/v1/nits
 ```
 
-## Officers
+## 6. (Optional) Give a user `nits:write` permission
 
-### Get a specific officer
+To test the `nits:write` permission, you will need to manually add the permission to a user in the database. You can do this with the following SQL commands:
 
-**Format:** `localhost:4000/v1/officers/[officer_id]`
+```sql
+-- First, find the user's ID
+SELECT id FROM users WHERE email = 'testuser@example.com';
 
-- `[officer_id]`: The ID of the officer.
+-- Then, find the 'nits:write' permission's ID
+SELECT id FROM permissions WHERE code = 'nits:write';
 
-```bash
-curl -i localhost:4000/v1/officers/[officer_id]
+-- Finally, insert a new record into the users_permissions table
+INSERT INTO users_permissions (user_id, permission_id) VALUES (<USER_ID>, <PERMISSION_ID>);
 ```
 
-### Update an officer's first name
-
-**Format:** `localhost:4000/v1/officers/[officer_id]`
-
-- `[officer_id]`: The ID of the officer.
-
-```bash
-curl -X PATCH -H "Content-Type: application/json" -d '{"first_name": "NewFirstName"}' localhost:4000/v1/officers/[officer_id]
-```
-
-### Update multiple fields
-
-**Format:** `localhost:4000/v1/officers/[officer_id]`
-
-- `[officer_id]`: The ID of the officer.
-
-```bash
-curl -X PATCH -H "Content-Type: application/json" -d '{"rank_id": 2, "is_active": false}' localhost:4000/v1/officers/[officer_id]
-```
-
-### Failed validation
-
-This example will fail validation because the `first_name` is empty.
-
-```bash
-curl -X PATCH -H "Content-Type: application/json" -d '{"first_name": ""}' localhost:4000/v1/officers/[officer_id]
-```
-
-### Delete an officer
-
-**Format:** `localhost:4000/v1/officers/[officer_id]`
-
-- `[officer_id]`: The ID of the officer.
-
-```bash
-curl -X DELETE localhost:4000/v1/officers/[officer_id]
-```
-
-### Get all officers
-
-```bash
-curl -i localhost:4000/v1/officers
-```
-
-### Add a new officer
-
-When adding a new officer, you need to provide the following fields in the JSON body of your request:
-
-- `regulation_number` (string, required): The unique regulation number of the officer. Must not be more than 50 characters long.
-- `first_name` (string, required): The first name of the officer. Must not be more than 100 characters long.
-- `last_name` (string, required): The last name of the officer. Must not be more than 100 characters long.
-- `sex` (string, required): The sex of the officer. Must be either "Male" or "Female".
-- `rank_id` (integer, required): The ID of the officer's rank. This should correspond to an existing ID in the `ranks` table.
-- `formation_id` (integer, required): The ID of the officer's formation. This should correspond to an existing ID in the `formations` table.
-- `posting_id` (integer, required): The ID of the officer's posting. This should correspond to an existing ID in the `postings` table.
-- `is_active` (boolean, required): A boolean value indicating whether the officer is currently active.
-
-**Sample `curl` command:**
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{
-    "regulation_number": "12345",
-    "first_name": "John",
-    "last_name": "Doe",
-    "sex": "Male",
-    "rank_id": 1,
-    "formation_id": 1,
-    "posting_id": 1,
-    "is_active": true
-}' localhost:4000/v1/officers
-```
-
-## Unit Testing
-
-To run validator tests:
-
-```bash
-go test -v ./internal/data
-```
-
-## Facilitators
-
-### Get a specific facilitator
-
-**Format:** `localhost:4000/v1/facilitators/[facilitator_id]`
-
-- `[facilitator_id]`: The ID of the facilitator.
-
-```bash
-curl -i localhost:4000/v1/facilitators/[facilitator_id]
-```
-
-### Update a facilitator's information
-
-**Format:** `localhost:4000/v1/facilitators/[facilitator_id]`
-
-- `[facilitator_id]`: The ID of the facilitator.
-
-```bash
-curl -X PATCH -H "Content-Type: application/json" -d '{
-    "first_name": "NewFirstName",
-    "last_name": "NewLastName",
-    "email": "newemail@example.com",
-    "personnel_id": 1
-}' localhost:4000/v1/facilitators/[facilitator_id]
-```
-
-### Update a facilitator's email
-
-**Format:** `localhost:4000/v1/facilitators/[facilitator_id]`
-
-- `[facilitator_id]`: The ID of the facilitator.
-
-```bash
-curl -X PATCH -H "Content-Type: application/json" -d '{"email": "anothernewemail@example.com"}' localhost:4000/v1/facilitators/[facilitator_id]
-```
-
-### Delete a facilitator
-
-**Format:** `localhost:4000/v1/facilitators/[facilitator_id]`
-
-- `[facilitator_id]`: The ID of the facilitator.
-
-```bash
-curl -X DELETE localhost:4000/v1/facilitators/[facilitator_id]
-```
-
-### Get all facilitators
-
-```bash
-curl -i localhost:4000/v1/facilitators
-```
-
-### Add a new facilitator
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "johndoe@example.com"
-}' localhost:4000/v1/facilitators
-```
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "email": "janedoe@example.com",
-    "personnel_id": 1
-}' localhost:4000/v1/facilitators
-```
-
-## Courses
-
-### Get all courses
-
-```bash
-curl -i localhost:4000/v1/courses
-```
-
-### Create a new course
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{
-    "title": "New Course",
-    "description": "This is a new course.",
-    "category": "Mandatory",
-    "credit_hours": 3
-}' localhost:4000/v1/courses
-```
-
-### Get a specific course
-
-**Format:** `localhost:4000/v1/courses/[course_id]`
-
-- `[course_id]`: The ID of the course.
-
-```bash
-curl -i localhost:4000/v1/courses/[course_id]
-```
-
-### Update a course
-
-**Format:** `localhost:4000/v1/courses/[course_id]`
-
-- `[course_id]`: The ID of the course.
-
-```bash
-curl -X PATCH -H "Content-Type: application/json" -d '{
-    "title": "Updated Course Title"
-}' localhost:4000/v1/courses/[course_id]
-```
-
-### Delete a course
-
-**Format:** `localhost:4000/v1/courses/[course_id]`
-
-- `[course_id]`: The ID of the course.
-
-```bash
-curl -X DELETE localhost:4000/v1/courses/[course_id]
-```
-
-## Feedback
-
-### Facilitator Feedback
-
-#### Create Facilitator Feedback
-
-**Format:** `http://localhost:4000/v1/facilitators/[facilitator_id]/feedback`
-
-- `[facilitator_id]`: The ID of the facilitator.
-
-**Important:** This request will fail if the `facilitator_id` or the `session_enrollment_id` in the request body does not exist in the database.
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{
-  "session_enrollment_id": [session_enrollment_id],
-  "score": 5,
-  "comment": "Excellent facilitator!"
-}' http://localhost:4000/v1/facilitators/[facilitator_id]/feedback
-```
-
-#### List Facilitator Feedback
-
-**Format:** `http://localhost:4000/v1/facilitators/[facilitator_id]/feedback`
-
-- `[facilitator_id]`: The ID of the facilitator.
-
-```bash
-curl http://localhost:4000/v1/facilitators/[facilitator_id]/feedback
-```
-
-### Course Feedback
-
-#### Create Course Feedback
-
-**Format:** `http://localhost:4000/v1/courses/[course_id]/feedback`
-
-- `[course_id]`: The ID of the course.
-
-**Important:** This request will fail if the `course_id` or the `session_enrollment_id` in the request body does not exist in the database.
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{
-  "session_enrollment_id": [session_enrollment_id],
-  "score": 4,
-  "comment": "The course was very informative."
-}' http://localhost:4000/v1/courses/[course_id]/feedback
-```
-
-#### List Course Feedback
-
-**Format:** `http://localhost:4000/v1/courses/[course_id]/feedback`
-
-- `[course_id]`: The ID of the course.
-
-```bash
-curl http://localhost:4000/v1/courses/[course_id]/feedback
-```
-
-## New Endpoints
-
-### Facilitator Session Management
-
-#### Assign a facilitator to a session
-
-**Format:** `localhost:4000/v1/sessions/[session_id]/facilitators`
-
-- `[session_id]`: The ID of the training session.
-
-**Important:** This request will fail if the `session_id` or the `facilitator_id` in the request body does not exist in the database.
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{
-    "facilitator_id": [facilitator_id]
-}' localhost:4000/v1/sessions/[session_id]/facilitators
-```
-
-#### Remove a facilitator from a session
-
-**Format:** `localhost:4000/v1/sessions/[session_id]/facilitators/[facilitator_id]`
-
-- `[session_id]`: The ID of the training session.
-- `[facilitator_id]`: The ID of the facilitator to be removed.
-
-**Important:** This request will fail if the `session_id` or `facilitator_id` does not exist in the database.
-
-```bash
-curl -X DELETE localhost:4000/v1/sessions/[session_id]/facilitators/[facilitator_id]
-```
-
-### Ratings and Feedback
-
-#### Submit a rating for a course, linked to a specific enrollment
-
-**Format:** `localhost:4000/v1/enrollments/[enrollment_id]/courserating`
-
-- `[enrollment_id]`: The ID of the session enrollment.
-
-**Important:** This request will fail if the `enrollment_id` does not exist in the database.
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{
-    "score": 5,
-    "comment": "Great course!"
-}' localhost:4000/v1/enrollments/[enrollment_id]/courserating
-```
-
-#### Submit a rating for a facilitator, linked to a specific enrollment
-
-**Format:** `localhost:4000/v1/enrollments/[enrollment_id]/facilitatorrating`
-
-- `[enrollment_id]`: The ID of the session enrollment.
-
-**Important:** This request will fail if the `enrollment_id` or the `facilitator_id` in the request body does not exist in the database.
-
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{
-    "facilitator_id": [facilitator_id],
-    "score": 5,
-    "comment": "Excellent facilitator!"
-}' localhost:4000/v1/enrollments/[enrollment_id]/facilitatorrating
-
-## Pagination
-
-The `GET /v1/officers` and `GET /v1/courses` endpoints now support pagination. You can control the number of results and the page number by using the `page` and `page_size` query string parameters.
-
-### Supported Routes
-
-- `localhost:4000/v1/officers`
-- `localhost:4000/v1/courses`
-- `localhost:4000/v1/facilitators`
-
-### Parameters
-
-- `page` (integer): Specifies the page number of results to return. Defaults to `1`. Must be greater than zero and at most 500.
-- `page_size` (integer): Specifies the number of records to return per page. Defaults to `20`. Must be greater than zero and at most 100.
-
-### Sample Requests
-
-#### Get the first page of officers with 5 records per page
-
-```bash
-curl -i "localhost:4000/v1/officers?page=1&page_size=5"
-```
-
-#### Get the second page of officers with 5 records per page
-
-```bash
-curl -i "localhost:4000/v1/officers?page=2&page_size=5"
-```
-
-#### Get the first page of courses with 10 records per page
-
-```bash
-curl -i "localhost:4000/v1/courses?page=1&page_size=10"
-```
-
-#### Get the first page of facilitators with 5 records per page
-
-```bash
-curl -i "localhost:4000/v1/facilitators?page=1&page_size=5"
-```
-
-### Response Metadata
-
-The response for a paginated request will include a `metadata` object with the following fields:
-
-- `current_page`: The current page number.
-- `page_size`: The number of records per page.
-- `first_page`: The first page number.
-- `last_page`: The last page number.
-- `total_records`: The total number of records available.
-
-## Rate Limiting
-
-### Test the rate limiter
-
-This command will send 8 requests to the healthcheck endpoint. If the rate limiter is enabled with the default settings (burst of 5, 2 requests per second), the first 5 requests should succeed and the next 3 should be rejected with a `429 Too Many Requests` status.
-
-```bash
-for i in {1..8}; do curl -i localhost:4000/v1/healthcheck; done
-```
-
-### Test with the rate limiter disabled
-
-To test with the rate limiter disabled, you need to start the server with the `-limiter-enabled=false` flag.
-
-```bash
-go run ./cmd/api -limiter-enabled=false
-```
-
-Then, run the same curl command. All 8 requests should succeed.
-
-```bash
-for i in {1..8}; do curl -i localhost:4000/v1/healthcheck; done
-```
-
-
-
-
-## Authentication
-
-## Register a user (Public Route)
-
-```bash
-curl -X POST http://localhost:4000/v1/users \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "password": "password123"}'
-```
-
-## Activate the User (Public Route)
-
-```bash
-curl -X PUT http://localhost:4000/v1/users/activated \
-  -H "Content-Type: application/json" \
-  -d '{"token": "YOUR_ACTIVATION_TOKEN"}'
-```
-
-## Get Authentication Token (Public Route)
-
-```bash
-curl -X POST http://localhost:4000/v1/tokens/authentication \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "password": "password123"}'
-```
-
-Of course. Here are the `curl` commands you can use to test the authorization implementation.
-
-Please replace placeholder values like `YOUR_EMAIL`, `YOUR_PASSWORD`, and `YOUR_TOKEN` with actual values.
-
-### 1. Test with an Unactivated User
-
-First, register a new user. This user will be unactivated by default.
-
-```bash
-# Register a new user
-curl -i -X POST -H "Content-Type: application/json" \
--d '{"name": "Unactivated User", "email": "unactivated@example.com", "password": "password123"}' \
-localhost:4000/v1/users
-```
-
-Now, attempt to create an authentication token for this unactivated user.
-
-```bash
-# Attempt to get an authentication token
-BODY='{"email": "unactivated@example.com", "password": "password123"}'
-curl -i -X POST -H "Content-Type: application/json" -d "$BODY" \
-localhost:4000/v1/tokens/authentication
-```
-
-If the login is successful and you receive a token, use it to try and access a protected endpoint. You should be blocked.
-
-```bash
-# Replace YOUR_UNACTIVATED_TOKEN with the token from the previous step
-curl -i -H "Authorization: Bearer YOUR_UNACTIVATED_TOKEN" \
-localhost:4000/v1/nits
-```
-
-__Expected Result:__ You should receive an `HTTP/1.1 403 Forbidden` status code with the message: `"your user account must be activated to access this resource"`.
-
-### 2. Test with an Anonymous User
-
-To test this, simply make a request to a protected endpoint without an `Authorization` header.
-
-```bash
-# Access a protected endpoint without a token
-curl -i localhost:4000/v1/nits
-```
-
-__Expected Result:__ You should receive an `HTTP/1.1 401 Unauthorized` status code with the message: `"you must be authenticated to access this resource"`.
-
-### 3. Test with an Activated User
-
-First, register a new user.
-
-```bash
-# Register a new user
-curl -i -X POST -H "Content-Type: application/json" \
--d '{"name": "Activated User", "email": "activated@example.com", "password": "password123"}' \
-localhost:4000/v1/users
-```
-
-Next, you need to activate this user. In a real application, this would be done by clicking a link in an email. For testing, you will need to get the activation token directly from your database from the `tokens` table for the new user and then use it in the following command.
-
-```bash
-# Replace YOUR_ACTIVATION_TOKEN with the token from your database
-BODY='{"token": "YOUR_ACTIVATION_TOKEN"}'
-curl -i -X PUT -H "Content-Type: application/json" -d "$BODY" \
-localhost:4000/v1/users/activated
-```
-
-Once the user is activated, you can create an authentication token.
-
-```bash
-# Get an authentication token for the activated user
-BODY='{"email": "activated@example.com", "password": "password123"}'
-curl -i -X POST -H "Content-Type: application/json" -d "$BODY" \
-localhost:4000/v1/tokens/authentication
-```
-
-Finally, use the authentication token to access a protected endpoint.
-
-```bash
-# Replace YOUR_AUTHENTICATION_TOKEN with the token from the previous step
-curl -i -H "Authorization: Bearer YOUR_AUTHENTICATION_TOKEN" \
-localhost:4000/v1/nits
-```
-
-__Expected Result:__ You should receive an `HTTP/1.1 200 OK` status code and the list of nits in the response body.
+After running these commands, you can re-run the POST request from step 5, and it should succeed.
