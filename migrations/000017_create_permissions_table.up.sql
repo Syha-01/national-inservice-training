@@ -18,5 +18,7 @@ INSERT INTO permissions (code, description) VALUES
     ('nits:read', 'View NITs'),
     ('nits:write', 'Create and update NITs'),
     ('nits:delete', 'Delete NITs'),
+    ('feedback:read', 'Read feedback'),
+    ('feedback:write', 'Write feedback'),
     ('admin:all', 'Full administrative access')
 ON CONFLICT (code) DO NOTHING;

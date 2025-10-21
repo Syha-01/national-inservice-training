@@ -11,7 +11,7 @@ ON CONFLICT DO NOTHING;
 
 -- Assign limited permissions to Content Contributor (role_id = 2)
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT 2, id FROM permissions 
+SELECT 2, id FROM permissions
 WHERE code IN (
     'officers:read', 'officers:write',
     'facilitators:read', 'facilitators:write',
@@ -22,11 +22,12 @@ ON CONFLICT DO NOTHING;
 
 -- Assign read-only permissions to System User (role_id = 3)
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT 3, id FROM permissions 
+SELECT 3, id FROM permissions
 WHERE code IN (
     'officers:read',
     'facilitators:read',
     'courses:read',
-    'nits:read'
+    'nits:read',
+    'feedback:write'
 )
 ON CONFLICT DO NOTHING;
