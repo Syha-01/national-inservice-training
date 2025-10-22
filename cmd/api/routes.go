@@ -21,6 +21,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPatch, "/v1/nits/:id", app.requirePermission("nits:write", app.updateNitHandler))
 	router.HandlerFunc(http.MethodDelete, "/v1/nits/:id", app.requirePermission("nits:write", app.deleteNitHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/nits", app.requirePermission("nits:read", app.listNitsHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/nits/enroll", app.requirePermission("nits:write", app.enrollPersonnelHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/officers", app.requirePermission("officers:write", app.createOfficerHandler))
 	router.HandlerFunc(http.MethodGet, "/v1/officers/:id", app.requirePermission("officers:read", app.displayOfficerHandler))

@@ -19,3 +19,5 @@ golang.org/x/time/rate
 # gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc
 ## explicit
 gopkg.in/alexcesaro/quotedprintable.v3
+# gopkg.in/mail.v2 v2.3.1
+## explicit

@@ -258,6 +258,24 @@ func (m NitModel) Delete(id int64) error {
 	return nil
 }
 
+// EnrollPersonnel enrolls a personnel in a training session.
+func (m NitModel) EnrollPersonnel(sessionID, personnelID int64) (int64, error) {
+	query := `
+		INSERT INTO session_enrollment (session_id, personnel_id)
+		VALUES ($1, $2)
+		RETURNING id`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var id int64
+	err := m.DB.QueryRowContext(ctx, query, sessionID, personnelID).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
 // GetOfficer retrieves a specific officer by ID.
 func (m OfficerModel) GetOfficer(id int64) (*Officer, error) {
 	// check if the id is valid

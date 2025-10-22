@@ -174,6 +174,30 @@ func (a *application) deleteNitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (a *application) enrollPersonnelHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		SessionID   int64 `json:"session_id"`
+		PersonnelID int64 `json:"personnel_id"`
+	}
+
+	err := a.readJSON(w, r, &input)
+	if err != nil {
+		a.badRequestResponse(w, r, err)
+		return
+	}
+
+	id, err := a.models.Nits.EnrollPersonnel(input.SessionID, input.PersonnelID)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = a.writeJSON(w, http.StatusCreated, envelope{"session_enrollment_id": id}, nil)
+	if err != nil {
+		a.serverErrorResponse(w, r, err)
+	}
+}
+
 func (a *application) listNitsHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		data.Filters

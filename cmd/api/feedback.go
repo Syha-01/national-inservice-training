@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Syha-01/national-inservice-training/internal/data"
+	"github.com/Syha-01/national-inservice-training/internal/validator"
 )
 
 func (a *application) createFacilitatorFeedbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +37,14 @@ func (a *application) createFacilitatorFeedbackHandler(w http.ResponseWriter, r 
 
 	err = a.models.Feedback.InsertFacilitatorFeedback(feedback)
 	if err != nil {
-		a.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrDuplicateRecord):
+			v := validator.New()
+			v.AddError("feedback", "you have already provided feedback for this facilitator")
+			a.failedValidationResponse(w, r, v.Errors)
+		default:
+			a.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 

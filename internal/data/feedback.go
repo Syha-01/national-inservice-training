@@ -2,7 +2,10 @@ package data
 
 import (
 	"database/sql"
+	"errors"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type FacilitatorFeedback struct {
@@ -35,7 +38,18 @@ func (m FeedbackModel) InsertFacilitatorFeedback(feedback *FacilitatorFeedback) 
 
 	args := []interface{}{feedback.FacilitatorID, feedback.SessionEnrollmentID, feedback.Score, feedback.Comment}
 
-	return m.DB.QueryRow(query, args...).Scan(&feedback.ID, &feedback.CreatedAt)
+	err := m.DB.QueryRow(query, args...).Scan(&feedback.ID, &feedback.CreatedAt)
+	if err != nil {
+		var pqError *pq.Error
+		if errors.As(err, &pqError) {
+			if pqError.Code.Name() == "unique_violation" {
+				return ErrDuplicateRecord
+			}
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (m FeedbackModel) GetAllForFacilitator(facilitatorID int64) ([]*FacilitatorFeedback, error) {

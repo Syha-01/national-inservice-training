@@ -68,3 +68,43 @@ curl -i -d "$PERMISSION_BODY" -H "Authorization: Bearer $ADMIN_TOKEN" localhost:
 ```
 
 After running this command, you can re-run the POST request from step 5 (with the non-admin user's token), and it should succeed.
+
+---
+
+# Facilitator and Course Feedback
+
+## Submitting Feedback for a Facilitator
+
+This command sends feedback for a specific facilitator.
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <AUTH_TOKEN>" \
+  -d '{
+  "session_enrollment_id": <ENROLLMENT_ID>,
+  "score": 5,
+  "comment": "Excellent facilitator!"
+}' "http://localhost:4000/v1/facilitators/<FACILITATOR_ID>/feedback"
+```
+
+### Command Breakdown:
+
+*   `curl`: The command-line tool used to make HTTP requests.
+*   `-X POST`: Specifies that this is an HTTP `POST` request, which is used to create a new resource (in this case, a new feedback entry).
+*   `-H "Content-Type: application/json"`: This is a header that tells the server the body of our request is in JSON format.
+*   `-H "Authorization: Bearer <AUTH_TOKEN>"`: This is the authorization header. You must include a valid authentication token (obtained in step 3) to prove who you are.
+*   `-d '{...}'`: This is the data, or body, of the request. It contains the actual feedback information.
+    *   `"session_enrollment_id"`: **CRITICAL**. This must be the ID of a user's enrollment in a specific session.
+    *   `"score"`: The numerical rating.
+    *   `"comment"`: The text feedback.
+*   `"http://localhost:4000/v1/facilitators/<FACILITATOR_ID>/feedback"`: The API endpoint. You must replace `<FACILITATOR_ID>` with the ID of the facilitator you are rating.
+
+### **Important Note on Enrollment**
+
+A user **must be enrolled in a training session** before they can provide feedback. The system links feedback directly to an enrollment, not just to a user.
+
+1.  **Enroll a user** in a session. This will generate a unique `session_enrollment_id`.
+2.  **Use that `session_enrollment_id`** in the body of your feedback request.
+
+If you try to use a `session_enrollment_id` that doesn't belong to the authenticated user or one that has already been used to submit feedback for the same facilitator, the request will fail. This is the reason for the "duplicate key" error.
