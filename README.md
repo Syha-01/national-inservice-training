@@ -1,8 +1,10 @@
+> This is a small sample, please take a look at our official documentation here: https://documentation-v2-iota.vercel.app/docs
+
 # National In-service Training API
 
-This is the TEST API for the National In-service Training program. It provides endpoints for managing training sessions, personnel, courses, and related data.
+This API provides endpoints for managing training sessions, personnel, courses, and related data for the National In-service Training program.
 
-## Setup
+## Quick Start
 
 ### Prerequisites
 
@@ -10,7 +12,7 @@ This is the TEST API for the National In-service Training program. It provides e
 - PostgreSQL
 - `migrate` CLI tool
 
-### Installation
+### Installation & Setup
 
 1.  **Clone the repository:**
     ```bash
@@ -19,12 +21,12 @@ This is the TEST API for the National In-service Training program. It provides e
     ```
 
 2.  **Database Setup:**
-    - Make sure your PostgreSQL server is running.
-    - Set the `TRAINING_DB_DSN` environment variable with your database connection string. You can add it to a `.envrc`
+    - Ensure your PostgreSQL server is running.
+    - Set the `TRAINING_DB_DSN` environment variable. You can add it to a `.envrc` file:
       ```bash
       export TRAINING_DB_DSN="postgres://user:password@localhost/training_db?sslmode=disable"
       ```
-    - Run the database migrations:
+    - Run database migrations:
       ```bash
       make db/migrations/up
       ```
@@ -34,111 +36,89 @@ This is the TEST API for the National In-service Training program. It provides e
       ```bash
       make run/api
       ```
-    - For production (restricts CORS origins):
-      ```bash
-      make run/api/prod
-      ```
-    The API will be running at `http://localhost:4000`.
+    - The API will be running at `http://localhost:4000`.
+
+## Sample Requests (cURL)
+
+Here are a few examples of how to interact with the API using cURL.
+
+### 1. Create and Activate a New User
+
+First, create a new user. The response will include an activation token.
+
+```bash
+BODY='{"email":"testuser@example.com", "password":"password123"}'
+curl -i -d "$BODY" localhost:4000/v1/users
+```
+
+Next, use the activation token from the previous response to activate the user.
+
+```bash
+# Replace <ACTIVATION_TOKEN> with the token from the previous step
+curl -X PUT -d '{"token": "<ACTIVATION_TOKEN>"}' localhost:4000/v1/users/activated
+```
+
+### 2. Authenticate and Get a Token
+
+Exchange the user's credentials for an authentication token.
+
+```bash
+BODY='{"email": "testuser@example.com", "password": "password123"}'
+curl -i -d "$BODY" localhost:4000/v1/tokens/authentication
+```
+
+### 3. Access a Protected Route
+
+Use the authentication token to access protected endpoints. This example fetches a list of NITs (National In-service Trainings).
+
+```bash
+# Replace <AUTH_TOKEN> with the authentication token from the previous step
+curl -i -H "Authorization: Bearer <AUTH_TOKEN>" localhost:4000/v1/nits
+```
+
+### 4. Submit Feedback for a Facilitator
+
+To submit feedback, you need to be enrolled in a session. A user **must be enrolled in a training session** before they can provide feedback. The system links feedback directly to an enrollment, not just to a user.
+
+```bash
+# Replace <AUTH_TOKEN>, <ENROLLMENT_ID>, and <FACILITATOR_ID> with actual values
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <AUTH_TOKEN>" \
+  -d '{
+  "session_enrollment_id": <ENROLLMENT_ID>,
+  "score": 5,
+  "comment": "Excellent facilitator!"
+}' "http://localhost:4000/v1/facilitators/<FACILITATOR_ID>/feedback"
+```
+
+## Authorization and Permissions
+
+The API uses a permission-based authorization system. Users are assigned permissions that grant them access to specific endpoints. By default, new users are assigned the `nits:read` permission, which allows them to view training information.
+
+To perform actions such as creating or updating data, users will need additional permissions (e.g., `nits:write`). These can be granted by an administrator. For example, to grant a user `nits:write` permission, an admin would make the following request:
+
+```bash
+# Authenticate as an admin to get an admin token
+ADMIN_BODY='{"email": "admin@example.com", "password": "adminpassword"}'
+ADMIN_TOKEN=$(curl -s -d "$ADMIN_BODY" localhost:4000/v1/tokens/authentication | jq -r .authentication_token.token)
+
+# Add the 'nits:write' permission to the user
+# Replace <USER_ID> with the ID of the user
+USER_ID=<USER_ID>
+PERMISSION_BODY='{"code":"nits:write"}'
+curl -i -d "$PERMISSION_BODY" -H "Authorization: Bearer $ADMIN_TOKEN" localhost:4000/v1/users/$USER_ID/permissions
+```
 
 ## Available Endpoints
 
-### Healthcheck
+A summary of the main endpoints. For a full list, please see the [official documentation](https://documentation-v2-iota.vercel.app/docs).
 
--   **GET `/v1/healthcheck`**
-    -   **Description:** Checks the status of the API.
-    -   **Response:**
-        ```json
-        {
-            "status": "available",
-            "system_info": {
-                "environment": "development",
-                "version": "1.0.0"
-            }
-        }
-        ```
-
-### National Inservice Training (NIT)
-
--   **POST `/v1/nits`**
-    -   **Description:** Creates a new training session.
-    -   **Request Body:**
-        ```json
-        {
-            "course_id": 1,
-            "start_date": "2025-12-01T00:00:00Z",
-            "end_date": "2025-12-05T00:00:00Z",
-            "location": "Training Academy"
-        }
-        ```
-
-### Officers
-
--   **GET `/v1/officers`**
-    -   **Description:** Retrieves a list of all officers.
-
--   **POST `/v1/officers`**
-    -   **Description:** Creates a new officer.
-    -   **Request Body:**
-        ```json
-        {
-            "regulation_number": "12345",
-            "first_name": "John",
-            "last_name": "Doe",
-            "sex": "Male",
-            "rank_id": 1,
-            "formation_id": 1,
-            "posting_id": 1,
-            "is_active": true
-        }
-        ```
-
--   **GET `/v1/officers/:id`**
-    -   **Description:** Retrieves a specific officer by their ID.
-
--   **PATCH `/v1/officers/:id`**
-    -   **Description:** Updates a specific officer's details.
-
--   **DELETE `/v1/officers/:id`**
-    -   **Description:** Deletes a specific officer.
-
-### Courses
-
--   **GET `/v1/courses`**
-    -   **Description:** Retrieves a list of all courses.
-
--   **POST `/v1/courses`**
-    -   **Description:** Creates a new course.
-    -   **Request Body:**
-        ```json
-        {
-            "title": "Advanced Investigation Techniques",
-            "description": "A course on modern investigation methods.",
-            "category": "Mandatory",
-            "credit_hours": 40.5
-        }
-        ```
-
--   **GET `/v1/courses/:id`**
-    -   **Description:** Retrieves a specific course by its ID.
-
--   **PATCH `/v1/courses/:id`**
-    -   **Description:** Updates a specific course's details.
-
--   **DELETE `/v1/courses/:id`**
-    -   **Description:** Deletes a specific course.
-
-## Coming Soon Endpoints
-
-The following endpoints are planned for future:
-
--   **Training Session Management:**
-    -   `GET /v1/trainings`: List all training sessions.
-    -   `POST /v1/trainings`: Create a new training session.
--   **User Authentication:**
-    -   Endpoints for user registration, login, and token management.
--   **Enrollment:**
-    -   Endpoints for enrolling officers in training sessions.
--   **Facilitators:**
-    -   Endpoints for managing course facilitators.
--   **Ratings:**
-    -   Endpoints for rating courses and facilitators.
+- **Healthcheck:** `GET /v1/healthcheck`
+- **Users:** `POST /v1/users`, `PUT /v1/users/activated`
+- **Tokens:** `POST /v1/tokens/authentication`
+- **Permissions:** `POST /v1/users/:id/permissions`
+- **NITs:** `GET /v1/nits`, `POST /v1/nits`
+- **Officers:** `GET /v1/officers`, `POST /v1/officers`, `GET /v1/officers/:id`, `PATCH /v1/officers/:id`, `DELETE /v1/officers/:id`
+- **Courses:** `GET /v1/courses`, `POST /v1/courses`, `GET /v1/courses/:id`, `PATCH /v1/courses/:id`, `DELETE /v1/courses/:id`
+- **Feedback:** `POST /v1/facilitators/:id/feedback`
